@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import Services from "@/components/Services";
 import { useCallback, useEffect, useRef, useState } from "react";
 const LogisticsScene = dynamic(() => import("@/components/LogisticsScene"), {
   ssr: false,
@@ -34,75 +35,8 @@ function Brand() {
     </a>
   );
 }
-const services = [
-  {
-    n: "01",
-    title: "Freight, without friction.",
-    tag: "GROUND FREIGHT",
-    text: "From a single pallet to a full truckload. A clear route forward for the things your business depends on.",
-    icon: "truck",
-  },
-  {
-    n: "02",
-    title: "Room for your next chapter.",
-    tag: "WAREHOUSING & FULFILLMENT",
-    text: "Storage, inventory, and order preparation, thoughtfully connected in one place. Built around the way you grow.",
-    icon: "warehouse",
-  },
-  {
-    n: "03",
-    title: "The last mile. A lasting impression.",
-    tag: "LAST-MILE DELIVERY",
-    text: "Bring every journey to a brilliant finish, with considered delivery from your warehouse to their doorstep.",
-    icon: "box",
-  },
-];
-function ServiceIcon({ type }: { type: string }) {
-  return (
-    <svg
-      viewBox="0 0 120 90"
-      fill="none"
-      stroke="#272a2b"
-      strokeWidth="1.6"
-      aria-hidden="true"
-    >
-      {type === "truck" ? (
-        <>
-          <path d="m12 33 48-20 35 15-47 21z" fill="#ee4437" />
-          <path d="M12 33v28l36 17V49z" fill="#dc3b30" />
-          <path d="m48 49 47-21v28L48 78z" fill="#ee4437" />
-          <path d="m77 58 18-8 16 13-19 8z" fill="#fffdf8" />
-          <path d="M92 71v13l19-9V63z" fill="#e0e2dc" />
-          <path d="m77 58 15 13v13L77 70z" fill="#fffdf8" />
-          <path d="m97 64 9-4 5 4-14 7z" fill="#647474" />
-          <ellipse cx="32" cy="73" rx="5" ry="7" fill="#272a2b" />
-          <ellipse cx="97" cy="82" rx="4" ry="6" fill="#272a2b" />
-          <path d="m56 57 18-8m-5-1 6 1-3 5" stroke="#fffdf8" strokeWidth="3" />
-        </>
-      ) : type === "warehouse" ? (
-        <>
-          <path d="m14 34 43-22 48 22-43 23z" fill="#fffdf8" />
-          <path d="M14 34v32l48 23V57z" fill="#e0e2dc" />
-          <path d="m62 57 43-23v32L62 89z" fill="#fffdf8" />
-          <path d="m14 39 48 23 43-23v8L62 70 14 47z" fill="#ed4135" />
-          <path d="m22 55 12 6v14l-12-6zm19 9 12 6v14l-12-6z" fill="#647474" />
-          <path d="m42 29 17-9 18 9-17 9z" fill="#272a2b" />
-          <path d="m71 68 23-12v6L71 74z" fill="#647474" />
-        </>
-      ) : (
-        <>
-          <path d="m24 31 35-19 38 19-35 20z" fill="#ed4135" />
-          <path d="M24 31v36l38 22V51z" fill="#dc3b30" />
-          <path d="m62 51 35-20v36L62 89z" fill="#ee4437" />
-          <path d="m40 22 38 20v15l9-5V37L49 17z" fill="#fffdf8" />
-          <path d="m70 68 17-10v10L70 78z" fill="#fffdf8" />
-          <path d="M12 17h14M5 26h11m83 51h12" strokeLinecap="round" />
-        </>
-      )}
-    </svg>
-  );
-}
 export default function Home() {
+  const [selectedService, setSelectedService] = useState("Freight transport");
   const [menu, setMenu] = useState(false),
     [paused, setPaused] = useState(false),
     [ready, setReady] = useState(false),
@@ -277,41 +211,12 @@ export default function Home() {
           A LITTLE FURTHER GOES A LONG WAY <span>↓</span>
         </a>
       </section>
-      <section className="services section" id="services">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">ONE PARTNER. EVERY POSSIBILITY.</span>
-            <h2>
-              From your next shipment
-              <br />
-              to your next big step.
-            </h2>
-          </div>
-          <p>
-            A connected approach to getting things
-            <br className="desktop-break" /> where they need to be.
-          </p>
-        </div>
-        <div className="services-grid">
-          {services.map((s) => (
-            <article className="service" key={s.n}>
-              <div className="service-top">
-                <span>{s.n} /</span>
-                <ServiceIcon type={s.icon} />
-              </div>
-              <span className="eyebrow">{s.tag}</span>
-              <h3>{s.title}</h3>
-              <p>{s.text}</p>
-              <button
-                onClick={openQuote}
-                aria-label={`Enquire about ${s.tag.toLowerCase()}`}
-              >
-                Let’s find your route <Arrow />
-              </button>
-            </article>
-          ))}
-        </div>
-      </section>
+      <Services
+        onSelect={(service) => {
+          setSelectedService(service);
+          openQuote();
+        }}
+      />
       <section className="process section" id="how-it-works">
         <div className="process-intro">
           <span className="eyebrow">LESS COMPLEXITY. MORE POSSIBILITY.</span>
@@ -475,7 +380,15 @@ export default function Home() {
               </div>
               <label>
                 What do you need?
-                <select name="service">
+                <select
+                  name="service"
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                >
+                  <option>Road Transportation</option>
+                  <option>Ocean Freight</option>
+                  <option>Air Freight</option>
+                  <option>Drone Parcel Delivery</option>
                   <option>Freight transport</option>
                   <option>Warehousing & fulfillment</option>
                   <option>Last-mile delivery</option>

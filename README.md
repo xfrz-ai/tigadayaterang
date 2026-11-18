@@ -36,3 +36,11 @@ node scripts/verify.mjs
 ```
 
 Browser verification requires Google Chrome and a running local server. Set `VERIFY_URL` to test another origin. The script checks simultaneous animation, a fixed camera, rendering calls, pause/resume, reduced motion, navigation, responsive overflow, dialog behavior, download generation, and browser errors. Screenshots and results are written to ignored `artifacts/`.
+
+## Animated service cards
+
+The Services section directly below the hero presents road transportation, ocean freight, air freight, and drone parcel delivery. `components/Services.tsx` contains the responsive HTML cards; `ServiceIllustration.tsx` manages each orthographic view; `service-models.ts` builds and animates the vehicles. The road card reuses the hero's truck, and all four share the original toon material and outline system. Shipping containers reuse cached geometries.
+
+Each card loads as it approaches the viewport, runs independently while visible, and pauses offscreen, when the tab is hidden, or when reduced motion is enabled. Hover or keyboard focus smoothly increases animation speed and highlights the enquiry button. Selecting a service opens the existing shipment brief with that service selected.
+
+Run `node scripts/verify-services.mjs` against the dev server (or set `VERIFY_URL`) to check animation, hover, service selection, responsive columns, offscreen pausing, reduced motion, and preservation of the original hero.

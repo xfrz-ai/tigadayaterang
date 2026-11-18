@@ -44,7 +44,7 @@ const ink = new THREE.LineBasicMaterial({
 const textTextures = new Map<string, THREE.CanvasTexture>();
 
 /** Merge geometry by material. Each model uses a handful of draw calls, not one per detail. */
-class Model {
+export class Model {
   group = new THREE.Group();
   parts = new Map<string, THREE.BufferGeometry[]>();
   edges: THREE.BufferGeometry[] = [];
@@ -123,7 +123,7 @@ class Model {
     return this.group;
   }
 }
-function label(
+export function label(
   parent: THREE.Group,
   text: string,
   pos: number[],
