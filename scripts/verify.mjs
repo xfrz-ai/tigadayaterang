@@ -41,10 +41,6 @@ try {
     await page.evaluate(() => window.__relayScene.time),
     "Pause freezes animation",
   );
-  await page.screenshot({
-    path: "artifacts/desktop-final.png",
-    fullPage: true,
-  });
   await page
     .getByRole("button", { name: "Play animation", exact: true })
     .click();
@@ -80,10 +76,6 @@ try {
       ),
       `No horizontal overflow at ${width}px`,
     );
-    await page.screenshot({
-      path: `artifacts/responsive-${width}.png`,
-      fullPage: true,
-    });
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Open menu" }).click();

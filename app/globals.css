@@ -279,28 +279,6 @@ h1 span {
   border-radius: 50%;
   animation: pulse 1s infinite;
 }
-.hero-note {
-  position: absolute;
-  z-index: 2;
-  top: 57%;
-  left: 5%;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  pointer-events: none;
-  transform: rotate(-5deg);
-}
-.note-cross {
-  font-size: 42px;
-  line-height: 1;
-  color: var(--red);
-}
-.hero-note p {
-  font-size: 9px;
-  font-weight: 650;
-  line-height: 1.5;
-  letter-spacing: 1.5px;
-}
 .scene-status {
   position: absolute;
   z-index: 3;
@@ -330,12 +308,6 @@ h1 span {
   animation: none;
   box-shadow: none;
 }
-.status-divider {
-  height: 12px;
-  width: 1px;
-  background: #d3d6cf;
-  margin-left: 3px;
-}
 .scene-status button {
   padding: 0;
   display: grid;
@@ -348,25 +320,6 @@ h1 span {
 .scene-status svg {
   width: 10px;
   height: 10px;
-}
-.scroll-cue {
-  position: absolute;
-  z-index: 3;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 22px;
-  align-items: center;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 1.8px;
-  white-space: nowrap;
-  padding: 8px 13px;
-  background: rgba(246, 245, 241, 0.9);
-}
-.scroll-cue span {
-  font-size: 18px;
 }
 .tour-panel {
   position: absolute;
@@ -766,9 +719,6 @@ h2 {
   .header {
     max-width: 1640px;
   }
-  .hero-note {
-    top: 55%;
-  }
 }
 @media (max-width: 1000px) {
   .header {
@@ -788,10 +738,6 @@ h2 {
   }
   .scene {
     top: 390px;
-  }
-  .hero-note {
-    top: 60%;
-    left: 4%;
   }
   .section {
     padding-left: 35px;
@@ -917,31 +863,12 @@ h2 {
     right: -100px;
     mask-image: linear-gradient(to bottom, transparent, black 45px);
   }
-  .hero-note {
-    top: auto;
-    bottom: 345px;
-    left: 22px;
-    gap: 6px;
-  }
-  .note-cross {
-    font-size: 31px;
-  }
-  .hero-note p {
-    font-size: 6px;
-    letter-spacing: 1.1px;
-  }
   .scene-status {
     right: 20px;
     bottom: 74px;
     padding: 10px;
     font-size: 7px;
     letter-spacing: 0.9px;
-  }
-  .scroll-cue {
-    font-size: 6px;
-    gap: 13px;
-    bottom: 21px;
-    letter-spacing: 1.3px;
   }
   .tour-panel {
     bottom: 128px;
@@ -1148,17 +1075,6 @@ h2 {
   display: block;
   touch-action: pan-y !important;
   pointer-events: none;
-}
-/* Inner walls of the recess the scene sinks into on hover; driven per frame. */
-.cargo-service-depth {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  color: var(--ink);
-  pointer-events: none;
-  visibility: hidden;
 }
 .cargo-service-index {
   position: absolute;

@@ -28,27 +28,14 @@ const scrollToServices = async () => {
   await page.waitForTimeout(450);
 };
 try {
-  const source = await readFile("app/page.tsx", "utf8"),
-    previous = execFileSync(
-      "git",
-      ["show", "45b46d2f2ac819f9ec93847b3060ec4c1eaa2c73:app/page.tsx"],
-      { encoding: "utf8" },
-    );
-  const hero = (s) =>
-    s.slice(
-      s.indexOf('<section className="hero"'),
-      s.indexOf("</section>") + 10,
-    );
-  const normalizeBrand = (text) =>
-    text
-      .replaceAll("3 Daya Terang", "Relay")
-      .replaceAll("3 DAYA TERANG", "RELAY")
-      .replace(/\s+/g, " ");
-  assert.equal(
-    normalizeBrand(hero(source)),
-    normalizeBrand(hero(previous)),
-    "Hero layout is unchanged apart from branding",
-  );
+  const source = await readFile("app/page.tsx", "utf8");
+  for (const removed of [
+    "BETTER CONNECTED",
+    "INSIDE THE 3 DAYA TERANG HUB",
+    "A LITTLE FURTHER GOES A LONG WAY",
+    "note-cross",
+  ])
+    assert(!source.includes(removed), `Hero no longer shows "${removed}"`);
   assert.equal(
     await readFile("components/LogisticsScene.tsx", "utf8"),
     execFileSync(
@@ -100,31 +87,48 @@ try {
       before[kind].camera,
       `${kind} camera stays fixed`,
     );
-    assert.equal(after[kind].depth, 0, `${kind} rests flush with the card`);
+    assert.equal(after[kind].travel, 0, `${kind} rests in the centre`);
     assert.deepEqual(
       after[kind].rootRotation,
       [0, 0, 0],
       `${kind} scene does not rotate`,
     );
   }
+  // Hover drive-through: out ahead (+), back in from behind (-), rest at 0.
+  const sampleTrip = (kind, ms) =>
+    page.evaluate(
+      ([kind, ms]) =>
+        new Promise((done) => {
+          const samples = [],
+            start = performance.now();
+          const tick = () => {
+            samples.push(window.__relayServices[kind].travel);
+            if (performance.now() - start < ms) requestAnimationFrame(tick);
+            else done(samples);
+          };
+          tick();
+        }),
+      [kind, ms],
+    );
+  const tripsBefore = (await state()).air.trips;
   await page.locator('[data-service="air"]').hover();
-  await page.waitForTimeout(250);
-  const entering = await state();
-  assert(
-    entering.air.depth > 0.2 && entering.air.depth < 0.95,
-    "Hover eases the scene into the card",
-  );
-  assert(
-    await page
-      .locator('[data-service="air"] .cargo-service-depth')
-      .evaluate((el) => getComputedStyle(el).visibility === "visible"),
-    "Recess walls appear on hover",
-  );
-  await page.waitForTimeout(900);
+  const samples = await sampleTrip("air", 2000);
+  const firstOut = samples.findIndex((v) => v > 0.5),
+    firstIn = samples.findIndex((v) => v < -0.5);
+  assert(firstOut >= 0, "Vehicle drives forward out of the card");
+  assert(firstIn > firstOut, "Vehicle re-enters from behind after leaving");
+  assert.equal(samples.at(-1), 0, "Vehicle settles back in the centre");
   const hover = await state();
+  assert.equal(hover.air.trips, tripsBefore + 1, "One trip per hover");
   assert(hover.air.speed > 1.4, "Hover accelerates smoothly");
-  assert(hover.air.depth > 0.97, "Scene settles inside the card");
-  assert.equal(hover.road.depth, 0, "Only the hovered card recedes");
+  assert(
+    hover.road.travel === 0 && hover.ocean.travel === 0,
+    "Only the hovered card's vehicle moves",
+  );
+  await page.waitForTimeout(1200);
+  const stillHovered = await state();
+  assert.equal(stillHovered.air.trips, tripsBefore + 1, "Trip does not repeat");
+  assert.equal(stillHovered.air.travel, 0, "Vehicle stays in the centre");
   const arrow = page.getByRole("button", {
     name: "Enquire about Air Freight",
   });
@@ -155,12 +159,9 @@ try {
   await page.mouse.move(0, 0);
   await page.waitForTimeout(1800);
   assert(
-    Object.values(await state()).every((s) => s.depth === 0),
-    "Scenes return flush with the card after hover",
+    Object.values(await state()).every((s) => s.travel === 0),
+    "Vehicles are back in the centre after hover",
   );
-  await page
-    .locator("#services")
-    .screenshot({ path: "artifacts/services-desktop-final.png" });
   for (const [width, columns] of [
     [1440, 3],
     [820, 2],
@@ -190,9 +191,6 @@ try {
       ),
       "No horizontal overflow",
     );
-    await page
-      .locator("#services")
-      .screenshot({ path: `artifacts/services-${width}-final.png` });
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.locator("#about").scrollIntoViewIfNeeded();
@@ -225,12 +223,12 @@ try {
   const report = {
     passed: true,
     checks: [
-      "hero preserved",
+      "hero copy trimmed, 3D scene unchanged",
       "directly below hero",
       "drone hidden from cards and form",
       "three independent animations",
       "fixed orthographic cameras",
-      "hover sinks scene into card, then returns",
+      "hover drive-through: out ahead, in from behind, once",
       "hover acceleration and arrow",
       "all service CTA selections",
       "3 / 2+1 centred / 1 responsive grid",

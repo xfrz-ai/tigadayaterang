@@ -4,6 +4,8 @@ import { Model, C, batchStatic, cargo, label, truck } from "./models";
 export type ServiceKind = "road" | "ocean" | "air" | "drone";
 export type ServiceModel = {
   root: THREE.Group;
+  /** Holds the vehicle; slid along +x (its heading) for the hover drive-through. */
+  travel: THREE.Group;
   animate: (time: number, delta: number, speed: number) => void;
   focal: [number, number, number];
   span: number;
@@ -108,11 +110,113 @@ function container(color: string) {
   }
   return containerCache.get(color)!.clone(true);
 }
+// Leaping dolphin for the ocean card. Anything below the water line (y = 0)
+// is clipped away, so it rises out of and dives back into the sea.
+const waterLine = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)];
+const clippedMaterials = new Map<string, THREE.Material>();
+function clipped(source: THREE.Material) {
+  if (!clippedMaterials.has(source.uuid)) {
+    const m = source.clone();
+    m.clippingPlanes = waterLine;
+    // The cut at the water line shows the inside; keep it body-coloured.
+    if (m instanceof THREE.MeshToonMaterial) m.side = THREE.DoubleSide;
+    clippedMaterials.set(source.uuid, m);
+  }
+  return clippedMaterials.get(source.uuid)!;
+}
+const dolphinShell = new THREE.MeshBasicMaterial({
+  color: "#242827",
+  side: THREE.BackSide,
+  clippingPlanes: waterLine,
+});
+const DOLPHIN = "#647474";
+/** Dolphin facing +x, centred on its body, about 1.6 units nose to flukes. */
+function dolphin() {
+  const m = new Model();
+  const profile = [
+    [0, -0.66],
+    [0.035, -0.62],
+    [0.06, -0.5],
+    [0.11, -0.3],
+    [0.16, -0.1],
+    [0.185, 0.05],
+    [0.18, 0.2],
+    [0.15, 0.34],
+    [0.115, 0.44],
+    [0.075, 0.5],
+    [0.05, 0.55],
+    [0.04, 0.64],
+    [0, 0.68],
+  ].map(([r, y]) => new THREE.Vector2(r, y));
+  const body = new THREE.LatheGeometry(profile, 18);
+  m.add(body, DOLPHIN, [0, 0, 0], [0, 0, -Math.PI / 2], false);
+  // Ink outline: the body pushed out along its normals, drawn back-faced.
+  const shell = body.clone(),
+    pos = shell.attributes.position,
+    nor = shell.attributes.normal;
+  for (let i = 0; i < pos.count; i++)
+    pos.setXYZ(
+      i,
+      pos.getX(i) + nor.getX(i) * 0.014,
+      pos.getY(i) + nor.getY(i) * 0.014,
+      pos.getZ(i) + nor.getZ(i) * 0.014,
+    );
+  m.group.add(new THREE.Mesh(shell, dolphinShell));
+  // Swept-back dorsal fin.
+  const fin = new THREE.Shape();
+  fin.moveTo(0.14, 0);
+  fin.quadraticCurveTo(0.02, 0.05, -0.14, 0.27);
+  fin.quadraticCurveTo(-0.1, 0.1, -0.16, 0);
+  fin.closePath();
+  m.add(
+    new THREE.ExtrudeGeometry(fin, { depth: 0.035, bevelEnabled: false }),
+    DOLPHIN,
+    [-0.02, 0.14, -0.0175],
+  );
+  // Tail flukes, flat in the horizontal plane.
+  plan(
+    m,
+    [
+      [-0.6, 0],
+      [-0.74, 0.08],
+      [-0.84, 0.25],
+      [-0.9, 0.22],
+      [-0.8, 0],
+      [-0.9, -0.22],
+      [-0.84, -0.25],
+      [-0.74, -0.08],
+    ],
+    0.03,
+    -0.015,
+    DOLPHIN,
+  );
+  // Pectoral flippers angle down and back.
+  for (const side of [-1, 1])
+    m.box([0.09, 0.018, 0.2], [0.2, -0.11, side * 0.2], DOLPHIN, [
+      side * 0.5,
+      -side * 0.4,
+      0,
+    ]);
+  for (const side of [-1, 1])
+    m.sphere(0.022, [0.42, 0.04, side * 0.112], C.dark);
+  const group = m.finish();
+  group.traverse((o) => {
+    if (
+      (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) &&
+      o.material !== dolphinShell
+    )
+      o.material = clipped(o.material as THREE.Material);
+  });
+  return group;
+}
 function road(): ServiceModel {
   const root = new THREE.Group(),
+    travel = new THREE.Group(),
     vehicle = truck();
   batchStatic(vehicle, vehicle.userData.wheels);
-  root.add(vehicle);
+  travel.add(vehicle);
+  root.add(travel);
+  let lastTravel = 0;
   vehicle.position.set(-0.25, 0.12, 0);
   const decor = new THREE.Group();
   for (const [x, z, size, red] of [
@@ -145,14 +249,19 @@ function road(): ServiceModel {
   root.add(batchStatic(marks));
   return {
     root,
+    travel,
     focal: [0, 1.1, 0],
     span: 7.5,
     motion: () => vehicle.userData.wheels[0].rotation.z,
     animate(t, dt, speed) {
       vehicle.position.x = -0.25 + Math.sin(t * 0.55) * 0.13;
       vehicle.position.y = 0.12 + Math.sin(t * 7) * 0.012;
+      // Wheels also roll with the drive-through; ignore the off-screen wrap.
+      const moved = travel.position.x - lastTravel;
+      lastTravel = travel.position.x;
+      const roll = Math.abs(moved) < 2 ? moved : 0;
       vehicle.userData.wheels.forEach(
-        (w: THREE.Group) => (w.rotation.z -= (dt * speed * 1.6) / 0.46),
+        (w: THREE.Group) => (w.rotation.z -= (dt * speed * 1.6 + roll) / 0.46),
       );
       marks.position.x = -((t * 1.6) % 1.8);
     },
@@ -160,6 +269,7 @@ function road(): ServiceModel {
 }
 function ocean(): ServiceModel {
   const root = new THREE.Group(),
+    travel = new THREE.Group(),
     ship = new THREE.Group(),
     m = new Model();
   const hull = [
@@ -242,7 +352,8 @@ function ocean(): ServiceModel {
       }
   label(ship, "3 DAYA TERANG", [0, 0.74, 1.37], 2.45, 0.28, C.white);
   batchStatic(ship);
-  root.add(ship);
+  travel.add(ship);
+  root.add(travel);
   const water = new THREE.Mesh(
     new THREE.CircleGeometry(1, 64),
     new THREE.MeshBasicMaterial({
@@ -271,8 +382,52 @@ function ocean(): ServiceModel {
     root.add(group);
     waves.push(group);
   }
+  // A dolphin leaps alongside the ship (same heading), in the open water in
+  // front of the hull so it reads clearly against the card.
+  // Sink is chosen so the nose just touches the surface at take-off/landing.
+  const LEAP = { z: 3.6, length: 2.4, height: 1.55, sink: 0.65 };
+  const LEAP_TIME = 1.2,
+    LEAP_EVERY = 4.8,
+    FIRST_LEAP = 1.5;
+  const leaper = dolphin();
+  leaper.visible = false;
+  root.add(leaper);
+  // Expanding rings where it breaks the surface and where it dives back in.
+  const ringGeo = new THREE.RingGeometry(0.9, 1, 40);
+  ringGeo.rotateX(-Math.PI / 2);
+  const splashes = [-0.95, 0.95].map((x) =>
+    [0, 0.18].map((delay) => {
+      const ring = new THREE.Mesh(
+        ringGeo,
+        new THREE.MeshBasicMaterial({
+          color: DOLPHIN,
+          transparent: true,
+          depthWrite: false,
+        }),
+      );
+      ring.position.set(x, 0.02, LEAP.z);
+      ring.visible = false;
+      root.add(ring);
+      return { ring, delay };
+    }),
+  );
+  const dropGeo = new THREE.SphereGeometry(0.045, 8, 6),
+    dropMaterial = new THREE.MeshBasicMaterial({ color: "#8fa3a2" });
+  const drops = Array.from({ length: 6 }, (_, i) => {
+    const drop = new THREE.Mesh(dropGeo, dropMaterial);
+    drop.visible = false;
+    root.add(drop);
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    return {
+      drop,
+      vx: Math.cos(a) * 0.7,
+      vz: Math.sin(a) * 0.7,
+      vy: 2 + (i % 3) * 0.35,
+    };
+  });
   return {
     root,
+    travel,
     focal: [0, 1.5, 0],
     span: 10.6,
     motion: () => waves[0].position.x,
@@ -282,11 +437,52 @@ function ocean(): ServiceModel {
         w.position.x = Math.sin(t * 0.7 + i) * 0.23;
         w.position.z = Math.sin(t * 0.8 + i * 0.5) * 0.06;
       });
+      // Time since the current leap began.
+      const local = (t - FIRST_LEAP + LEAP_EVERY * 100) % LEAP_EVERY;
+      const u = local / LEAP_TIME;
+      leaper.visible = t >= FIRST_LEAP && u <= 1;
+      if (leaper.visible) {
+        // Parabolic arc; the body pitches to follow its direction of travel.
+        leaper.position.set(
+          LEAP.length * (u - 0.5),
+          -LEAP.sink + LEAP.height * 4 * u * (1 - u),
+          LEAP.z,
+        );
+        leaper.rotation.set(
+          Math.sin(u * Math.PI) * 0.12,
+          0,
+          Math.atan2(LEAP.height * 4 * (1 - 2 * u), LEAP.length),
+        );
+      }
+      splashes.forEach((rings, i) => {
+        const start = i ? LEAP_TIME - 0.05 : 0;
+        for (const { ring, delay } of rings) {
+          const age = local - start - delay;
+          ring.visible = t >= FIRST_LEAP && age >= 0 && age < 1;
+          if (!ring.visible) continue;
+          ring.scale.setScalar(0.18 + 0.62 * Math.sqrt(age));
+          (ring.material as THREE.MeshBasicMaterial).opacity = 0.6 * (1 - age);
+        }
+      });
+      // Spray: from the launch point, then from the dive point.
+      const entry = local >= LEAP_TIME - 0.05;
+      const sprayAge = entry ? local - (LEAP_TIME - 0.05) : local;
+      for (const { drop, vx, vy, vz } of drops) {
+        const y = vy * sprayAge - 3.6 * sprayAge * sprayAge;
+        drop.visible = t >= FIRST_LEAP && y > 0;
+        if (drop.visible)
+          drop.position.set(
+            (entry ? 0.95 : -0.95) + vx * sprayAge,
+            y,
+            LEAP.z + vz * sprayAge,
+          );
+      }
     },
   };
 }
 function airplane(): ServiceModel {
   const root = new THREE.Group(),
+    travel = new THREE.Group(),
     aircraft = new THREE.Group(),
     m = new Model();
   const profile = [
@@ -420,8 +616,9 @@ function airplane(): ServiceModel {
   aircraft.add(m.finish());
   label(aircraft, "3 Daya Terang", [-0.2, 1.64, 0.672], 2.5, 0.38, C.red);
   batchStatic(aircraft, jets);
-  root.add(aircraft);
-  shadow(root, 8.2, 4.5, 0.3, 0.3);
+  travel.add(aircraft);
+  shadow(travel, 8.2, 4.5, 0.3, 0.3);
+  root.add(travel);
   const slips = new THREE.Group();
   const sm = new Model();
   for (const [x, z] of [
@@ -434,6 +631,7 @@ function airplane(): ServiceModel {
   root.add(slips);
   return {
     root,
+    travel,
     focal: [0, 1.7, 0],
     span: 10.3,
     motion: () => jets[0].rotation.x,
@@ -447,6 +645,7 @@ function airplane(): ServiceModel {
 }
 function drone(): ServiceModel {
   const root = new THREE.Group(),
+    travel = new THREE.Group(),
     drone = new THREE.Group(),
     m = new Model();
   m.cylinder(0.67, 0.24, [0, 2.45, 0], C.dark, [0, 0, 0], 32);
@@ -509,10 +708,12 @@ function drone(): ServiceModel {
   m.box([0.14, 0.98, 0.015], [0, 0.94, 0.535], C.white);
   drone.add(m.finish());
   batchStatic(drone, rotors);
-  root.add(drone);
-  const shade = shadow(root, 3.2, 2.5);
+  travel.add(drone);
+  const shade = shadow(travel, 3.2, 2.5);
+  root.add(travel);
   return {
     root,
+    travel,
     focal: [0, 1.65, 0],
     span: 6.45,
     motion: () => rotors[0].rotation.y,

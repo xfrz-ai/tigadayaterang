@@ -1,8 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ServiceKind } from "./service-models";
-import type { PointerState } from "./ServiceIllustration";
 
 const ServiceIllustration = dynamic(() => import("./ServiceIllustration"), {
   ssr: false,
@@ -60,16 +59,7 @@ function ServiceCard({
   active: boolean;
   onSelect: (service: string) => void;
 }) {
-  const card = useRef<HTMLElement>(null),
-    art = useRef<HTMLDivElement>(null),
-    pointer = useRef<PointerState>({ x: 0, y: 0 });
-  const trackPointer = (e: PointerEvent) => {
-    const rect = art.current?.getBoundingClientRect();
-    if (!rect?.width || !rect.height) return;
-    const clamp = (v: number) => Math.max(-1, Math.min(1, v));
-    pointer.current.x = clamp(((e.clientX - rect.left) / rect.width) * 2 - 1);
-    pointer.current.y = clamp(((e.clientY - rect.top) / rect.height) * 2 - 1);
-  };
+  const card = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false),
     [loaded, setLoaded] = useState(false),
     [hovered, setHovered] = useState(false);
@@ -101,22 +91,14 @@ function ServiceCard({
       ref={card}
       className={`cargo-service-card${hovered ? " is-engaged" : ""}`}
       data-service={service.kind}
-      onPointerEnter={(e) => {
-        trackPointer(e);
-        setHovered(true);
-      }}
-      onPointerMove={trackPointer}
-      onPointerLeave={() => {
-        pointer.current.x = pointer.current.y = 0;
-        setHovered(false);
-      }}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
       onFocusCapture={() => setHovered(true)}
       onBlurCapture={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setHovered(false);
       }}
     >
       <div
-        ref={art}
         className="cargo-service-art"
         role="img"
         aria-label={service.description}
@@ -129,7 +111,6 @@ function ServiceCard({
             kind={service.kind}
             running={active && visible}
             hovered={hovered}
-            pointer={pointer}
           />
         )}
       </div>
