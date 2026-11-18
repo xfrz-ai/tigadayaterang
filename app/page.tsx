@@ -1,21 +1,19 @@
 "use client";
 import dynamic from "next/dynamic";
-import Services, { services } from "@/components/Services";
+import About from "@/components/About";
+import Brand from "@/components/Brand";
+import Footer from "@/components/Footer";
+import Contact from "@/components/Contact";
+import { WhatsAppIcon } from "@/components/icons";
+import Services from "@/components/Services";
+import Testimonials from "@/components/Testimonials";
+import WhyUs from "@/components/WhyUs";
+import { services } from "@/components/service-data";
 import { useCallback, useEffect, useRef, useState } from "react";
 const LogisticsScene = dynamic(() => import("@/components/LogisticsScene"), {
   ssr: false,
 });
-function WhatsAppIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35ZM12.05 21.5h-.01a9.45 9.45 0 0 1-4.82-1.32l-.35-.21-3.58.94.96-3.49-.23-.36a9.43 9.43 0 0 1-1.45-5.03c0-5.22 4.25-9.47 9.48-9.47a9.4 9.4 0 0 1 6.7 2.78 9.41 9.41 0 0 1 2.77 6.7c0 5.23-4.25 9.47-9.47 9.47Zm8.06-17.54A11.32 11.32 0 0 0 12.05.63C5.77.63.66 5.74.66 12.02c0 2.01.52 3.97 1.52 5.69L.57 23.6l6.04-1.58a11.36 11.36 0 0 0 5.44 1.38h.01c6.28 0 11.39-5.11 11.39-11.39 0-3.04-1.18-5.9-3.34-8.05Z"
-      />
-    </svg>
-  );
-}
-function Arrow({ diagonal = false }: { diagonal?: boolean }) {
+function Arrow() {
   return (
     <svg
       width="20"
@@ -25,7 +23,7 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
       aria-hidden="true"
     >
       <path
-        d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h15m-6-6 6 6-6 6"}
+        d="M4 12h15m-6-6 6 6-6 6"
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"
@@ -34,19 +32,10 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
     </svg>
   );
 }
-function Brand() {
-  return (
-    <a className="brand" href="#home" aria-label="3 Daya Terang home">
-      <svg viewBox="0 0 36 36" aria-hidden="true">
-        <path d="M3 7h20l10 11-10 11H3l10-11z" fill="currentColor" />
-        <path d="M3 18h18" stroke="#f6f5f1" strokeWidth="4" />
-      </svg>
-      3 Daya Terang
-    </a>
-  );
-}
 export default function Home() {
-  const [selectedService, setSelectedService] = useState("Freight transport");
+  const [selectedService, setSelectedService] = useState(
+    "Angkutan barang (freight)",
+  );
   const [menu, setMenu] = useState(false),
     [paused, setPaused] = useState(false),
     [ready, setReady] = useState(false),
@@ -87,25 +76,29 @@ export default function Home() {
         <header className="header">
           <Brand />
           <nav
-            aria-label="Main navigation"
+            aria-label="Navigasi utama"
             className={menu ? "nav open" : "nav"}
           >
             <a href="#services" onClick={() => setMenu(false)}>
-              Our services
+              Layanan
+            </a>
+            <a href="#tentang-kami" onClick={() => setMenu(false)}>
+              Tentang kami
+            </a>
+            <a href="#testimoni" onClick={() => setMenu(false)}>
+              Testimoni
             </a>
             <a href="#how-it-works" onClick={() => setMenu(false)}>
-              How it works
-            </a>
-            <a href="#about" onClick={() => setMenu(false)}>
-              Why 3 Daya Terang
+              Cara kerja
             </a>
           </nav>
           <button className="header-cta" onClick={openQuote}>
-            Hubungi kami <WhatsAppIcon />
+            <span className="header-cta-label">Hubungi kami</span>
+            <WhatsAppIcon />
           </button>
           <button
             className="menu-toggle"
-            aria-label={menu ? "Close menu" : "Open menu"}
+            aria-label={menu ? "Tutup menu" : "Buka menu"}
             aria-expanded={menu}
             onClick={() => setMenu(!menu)}
           >
@@ -114,21 +107,21 @@ export default function Home() {
         </header>
         <div className="hero-copy">
           <div className="eyebrow">
-            <span className="red-dot" /> ALWAYS MOVING FORWARD
+            <span className="red-dot" /> JASA LOGISTIK DARAT · LAUT · UDARA
           </div>
           <h1>
-            Good things.
+            Barang tiba.
             <br />
-            <span>Delivered.</span>
+            <span>Bisnis melaju.</span>
           </h1>
           <p>
-            Big ambitions deserve seamless logistics.
-            <br className="desktop-break" /> We connect every mile, so you can
-            focus on what’s next.
+            Ambisi besar butuh logistik yang mulus.
+            <br className="desktop-break" /> Kami urus perjalanannya, Anda fokus
+            melangkah.
           </p>
           <div className="hero-actions">
             <button className="button primary" onClick={openQuote}>
-              Let’s get moving <Arrow />
+              Mulai kirim <Arrow />
             </button>
             <button
               className="watch-button"
@@ -148,7 +141,7 @@ export default function Home() {
                   </svg>
                 )}
               </span>
-              See us in motion
+              Lihat kami beraksi
             </button>
           </div>
         </div>
@@ -156,7 +149,7 @@ export default function Home() {
           className={`scene ${ready ? "is-ready" : ""}`}
           ref={sceneRef}
           role="img"
-          aria-label="Animated isometric logistics hub with red delivery trucks, forklifts, workers carrying packages, and a warehouse with moving loading doors"
+          aria-label="Ilustrasi 3D pusat logistik: truk pengiriman merah, forklift, pekerja membawa paket, dan gudang dengan pintu bongkar muat yang bergerak"
         >
           <LogisticsScene
             paused={paused || !visible || hidden}
@@ -165,7 +158,7 @@ export default function Home() {
           {!ready && (
             <div className="scene-loading">
               <span />
-              Getting things moving
+              Menyiapkan armada
             </div>
           )}
         </div>
@@ -173,7 +166,7 @@ export default function Home() {
           <span className={`status-dot ${paused ? "stopped" : ""}`} />
           <button
             onClick={() => setPaused(!paused)}
-            aria-label={paused ? "Play animation" : "Pause animation"}
+            aria-label={paused ? "Putar animasi" : "Jeda animasi"}
           >
             {paused ? (
               <svg viewBox="0 0 12 12">
@@ -190,20 +183,20 @@ export default function Home() {
           <aside className="tour-panel">
             <button
               className="close-small"
-              aria-label="Close hub tour"
+              aria-label="Tutup tur"
               onClick={() => setTour(false)}
             >
               ×
             </button>
-            <span className="eyebrow">A LITTLE WORLD, ALWAYS AT WORK</span>
-            <h3>Every move is connected.</h3>
+            <span className="eyebrow">DUNIA KECIL YANG TAK PERNAH DIAM</span>
+            <h3>Setiap gerak saling terhubung.</h3>
             <p>
-              Follow the trucks, watch the forklifts, and peek inside the
-              loading bays. This live 3D illustration brings the 3 Daya Terang
-              journey to life.
+              Ikuti truk yang datang dan pergi, forklift yang sibuk memindahkan
+              palet, dan aktivitas di area bongkar muat. Ilustrasi 3D ini
+              menghidupkan perjalanan barang Anda bersama 3 Daya Terang.
             </p>
             <a href="#how-it-works" onClick={() => setTour(false)}>
-              Explore the process <Arrow />
+              Lihat cara kerja kami <Arrow />
             </a>
           </aside>
         )}
@@ -214,87 +207,65 @@ export default function Home() {
           openQuote();
         }}
       />
+      <About onContact={openQuote} />
+      <WhyUs onStart={openQuote} />
+      <Testimonials />
       <section className="process section" id="how-it-works">
         <div className="process-intro">
-          <span className="eyebrow">LESS COMPLEXITY. MORE POSSIBILITY.</span>
+          <span className="eyebrow">
+            LEBIH SEDERHANA. LEBIH BANYAK PELUANG.
+          </span>
           <h2>
-            A clear path.
+            Alurnya jelas.
             <br />
-            From A to <span>what’s next.</span>
+            Dari gudang ke <span>tujuan.</span>
           </h2>
           <p>
-            Great logistics should feel effortless. We keep the moving parts
-            connected, and you in the picture.
+            Logistik yang baik seharusnya terasa ringan. Kami jaga setiap
+            bagiannya tetap terhubung, dan Anda selalu tahu perkembangannya.
           </p>
           <button className="button primary" onClick={openQuote}>
-            Find your way forward <Arrow />
+            Rencanakan pengiriman <Arrow />
           </button>
         </div>
         <ol className="steps">
           <li>
             <span>01</span>
             <div>
-              <h3>Tell us where you’re headed.</h3>
+              <h3>Ceritakan kebutuhan Anda.</h3>
               <p>
-                Your products, your priorities, your next destination. It all
-                starts with a conversation.
+                Barang apa, berapa banyak, dari mana, dan ke mana. Semuanya
+                dimulai dari satu percakapan.
               </p>
             </div>
           </li>
           <li>
             <span>02</span>
             <div>
-              <h3>We connect the dots.</h3>
+              <h3>Kami susun rencananya.</h3>
               <p>
-                Freight, storage, and delivery come together in a plan shaped
-                around your business.
+                Angkutan, penyimpanan, dan pengantaran dirangkai dalam satu
+                rencana yang pas untuk bisnis Anda.
               </p>
             </div>
           </li>
           <li>
             <span>03</span>
             <div>
-              <h3>You keep moving forward.</h3>
+              <h3>Barang jalan, bisnis melaju.</h3>
               <p>
-                With a clear point of contact and a coordinated journey, your
-                next step is always in sight.
+                Dengan satu kontak yang jelas dan perjalanan yang terkoordinasi,
+                langkah berikutnya selalu terlihat.
               </p>
             </div>
           </li>
         </ol>
       </section>
-      <section className="about section" id="about">
-        <span className="eyebrow">BUILT AROUND WHAT MATTERS</span>
-        <h2>
-          Behind every package,
-          <br />
-          there’s a <em>possibility.</em>
-        </h2>
-        <div className="about-bottom">
-          <p>
-            A small business taking a big leap. A new idea reaching the world.
-            We believe logistics is about more than moving goods. It’s about
-            moving you forward.
-          </p>
-          <button className="button light" onClick={openQuote}>
-            Let’s build what’s next <Arrow diagonal />
-          </button>
-        </div>
-        <div className="about-arrow" aria-hidden="true">
-          ↗
-        </div>
-      </section>
-      <footer className="footer">
-        <Brand />
-        <p>Good things. Delivered.</p>
-        <span>
-          © {new Date().getFullYear()} 3 Daya Terang · Concept experience
-        </span>
-        <a href="#home">Back to the top ↑</a>
-      </footer>
+      <Contact onContact={openQuote} />
+      <Footer onQuote={openQuote} />
       <dialog
         ref={dialog}
-        aria-label="Create your shipment brief"
+        aria-label="Buat ringkasan pengiriman"
         className="quote-dialog"
         onClick={(e) => {
           if (e.target === dialog.current) dialog.current.close();
@@ -302,7 +273,7 @@ export default function Home() {
       >
         <button
           className="dialog-close"
-          aria-label="Close enquiry"
+          aria-label="Tutup formulir"
           onClick={() => dialog.current?.close()}
         >
           ×
@@ -310,47 +281,47 @@ export default function Home() {
         {submitted ? (
           <div className="success-message">
             <span className="success-icon">↗</span>
-            <span className="eyebrow">YOUR NEXT STEP IS READY</span>
+            <span className="eyebrow">LANGKAH BERIKUTNYA SUDAH SIAP</span>
             <h2>
-              Let’s get this
+              Siap kita
               <br />
-              moving.
+              berangkatkan.
             </h2>
             <p>
-              Your shipment brief is ready to download. This concept website
-              doesn’t send enquiries to a logistics provider.
+              Ringkasan pengiriman Anda sudah diunduh. Formulir ini belum
+              mengirimkan data ke tim kami.
             </p>
             <button
               className="button primary"
               onClick={() => dialog.current?.close()}
             >
-              Back to the hub <Arrow />
+              Kembali ke halaman <Arrow />
             </button>
           </div>
         ) : (
           <>
-            <span className="eyebrow">BIG PLANS START HERE</span>
+            <span className="eyebrow">RENCANA BESAR DIMULAI DI SINI</span>
             <h2>
-              Where are
+              Mau kirim
               <br />
-              we headed?
+              ke mana?
             </h2>
             <p>
-              Build a quick shipment brief to take into your next logistics
-              conversation.
+              Buat ringkasan singkat pengiriman Anda sebagai bahan diskusi
+              logistik berikutnya.
             </p>
             <form
               ref={form}
               onSubmit={(e) => {
                 e.preventDefault();
                 const data = new FormData(e.currentTarget);
-                const brief = `3 DAYA TERANG — SHIPMENT BRIEF\n\nName: ${data.get("name")}\nEmail: ${data.get("email")}\nService: ${data.get("service")}\nOrigin: ${data.get("origin")}\nDestination: ${data.get("destination")}\nDetails: ${data.get("details")}\n\nPrepared locally. No enquiry has been sent.\n`;
+                const brief = `3 DAYA TERANG — RINGKASAN PENGIRIMAN\n\nNama: ${data.get("name")}\nEmail: ${data.get("email")}\nLayanan: ${data.get("service")}\nAsal: ${data.get("origin")}\nTujuan: ${data.get("destination")}\nDetail: ${data.get("details")}\n\nDibuat di perangkat Anda. Belum ada permintaan yang terkirim.\n`;
                 const url = URL.createObjectURL(
                   new Blob([brief], { type: "text/plain" }),
                 );
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "3-daya-terang-shipment-brief.txt";
+                a.download = "3-daya-terang-ringkasan-pengiriman.txt";
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
                 setSubmitted(true);
@@ -358,27 +329,27 @@ export default function Home() {
             >
               <div className="form-row">
                 <label>
-                  Your name
+                  Nama Anda
                   <input
                     name="name"
                     autoComplete="name"
-                    placeholder="Alex Morgan"
+                    placeholder="Budi Santoso"
                     required
                   />
                 </label>
                 <label>
-                  Work email
+                  Email kantor
                   <input
                     name="email"
                     type="email"
                     autoComplete="email"
-                    placeholder="alex@company.com"
+                    placeholder="budi@perusahaan.co.id"
                     required
                   />
                 </label>
               </div>
               <label>
-                What do you need?
+                Layanan yang dibutuhkan
                 <select
                   name="service"
                   value={selectedService}
@@ -387,40 +358,45 @@ export default function Home() {
                   {services.map((s) => (
                     <option key={s.kind}>{s.title}</option>
                   ))}
-                  <option>Freight transport</option>
-                  <option>Warehousing & fulfillment</option>
-                  <option>Last-mile delivery</option>
-                  <option>A connected logistics solution</option>
+                  <option>Angkutan barang (freight)</option>
+                  <option>Pergudangan &amp; fulfillment</option>
+                  <option>Pengantaran last-mile</option>
+                  <option>Solusi logistik terpadu</option>
                 </select>
               </label>
               <div className="form-row">
                 <label>
-                  Moving from
-                  <input name="origin" placeholder="City or region" required />
+                  Dikirim dari
+                  <input
+                    name="origin"
+                    placeholder="Kota atau wilayah"
+                    required
+                  />
                 </label>
                 <label>
-                  Going to
+                  Tujuan pengiriman
                   <input
                     name="destination"
-                    placeholder="City or region"
+                    placeholder="Kota atau wilayah"
                     required
                   />
                 </label>
               </div>
               <label>
-                A little about your shipment
+                Ceritakan sedikit tentang kiriman Anda
                 <textarea
                   name="details"
                   rows={3}
-                  placeholder="What’s moving, how much, and when?"
+                  placeholder="Barang apa, berapa banyak, dan kapan?"
                   required
                 />
               </label>
               <button className="button primary" type="submit">
-                Create shipment brief <Arrow />
+                Buat ringkasan pengiriman <Arrow />
               </button>
               <small>
-                A downloadable brief. Your details stay in your browser.
+                Ringkasan diunduh ke perangkat Anda. Data tidak dikirim ke mana
+                pun.
               </small>
             </form>
           </>

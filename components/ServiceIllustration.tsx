@@ -193,14 +193,13 @@ export default function ServiceIllustration({
       }}
       fallback={
         <span className="service-webgl-fallback">
-          Explore{" "}
           {kind === "road"
-            ? "road transportation"
+            ? "Transportasi darat"
             : kind === "air"
-              ? "air freight"
+              ? "Kargo udara"
               : kind === "ocean"
-                ? "ocean freight"
-                : "drone delivery"}
+                ? "Kargo laut"
+                : "Pengiriman drone"}
           .
         </span>
       }

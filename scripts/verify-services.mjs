@@ -36,15 +36,21 @@ try {
     "note-cross",
   ])
     assert(!source.includes(removed), `Hero no longer shows "${removed}"`);
+  // Everything above the exported wrapper: imports, timing and the World
+  // (camera and animation). The wrapper only holds the no-WebGL fallback copy.
+  const heroWorld = (src) =>
+    src.slice(0, src.indexOf("export default function LogisticsScene"));
   assert.equal(
-    await readFile("components/LogisticsScene.tsx", "utf8"),
-    execFileSync(
-      "git",
-      [
-        "show",
-        "45b46d2f2ac819f9ec93847b3060ec4c1eaa2c73:components/LogisticsScene.tsx",
-      ],
-      { encoding: "utf8" },
+    heroWorld(await readFile("components/LogisticsScene.tsx", "utf8")),
+    heroWorld(
+      execFileSync(
+        "git",
+        [
+          "show",
+          "45b46d2f2ac819f9ec93847b3060ec4c1eaa2c73:components/LogisticsScene.tsx",
+        ],
+        { encoding: "utf8" },
+      ),
     ),
     "Hero camera and animation are unchanged",
   );
@@ -63,7 +69,7 @@ try {
   );
   assert.match(
     await page.locator("#cargo-services-heading").innerText(),
-    /We Provide Safe and\s+Reliable Cargo Solutions\./,
+    /Solusi Kargo yang Aman\s+dan Bisa Diandalkan\./,
   );
   assert.equal(
     await page.evaluate(
@@ -130,26 +136,26 @@ try {
   assert.equal(stillHovered.air.trips, tripsBefore + 1, "Trip does not repeat");
   assert.equal(stillHovered.air.travel, 0, "Vehicle stays in the centre");
   const arrow = page.getByRole("button", {
-    name: "Enquire about Air Freight",
+    name: "Tanya layanan Kargo Udara",
   });
   assert.equal(
     await arrow.evaluate((el) => getComputedStyle(el).backgroundColor),
     "rgb(36, 40, 39)",
   );
   await arrow.click();
-  assert(await page.locator("dialog").isVisible());
+  assert(await page.locator(".quote-dialog").isVisible());
   assert.equal(
-    await page.getByLabel("What do you need?").inputValue(),
-    "Air Freight",
+    await page.getByLabel("Layanan yang dibutuhkan").inputValue(),
+    "Kargo Udara",
   );
   await page.keyboard.press("Escape");
   for (const [name, value] of [
-    ["Road Transportation", "Road Transportation"],
-    ["Ocean Freight", "Ocean Freight"],
+    ["Transportasi Darat", "Transportasi Darat"],
+    ["Kargo Laut", "Kargo Laut"],
   ]) {
-    await page.getByRole("button", { name: `Enquire about ${name}` }).click();
+    await page.getByRole("button", { name: `Tanya layanan ${name}` }).click();
     assert.equal(
-      await page.getByLabel("What do you need?").inputValue(),
+      await page.getByLabel("Layanan yang dibutuhkan").inputValue(),
       value,
     );
     await page.keyboard.press("Escape");
@@ -172,7 +178,9 @@ try {
     await page.waitForTimeout(400);
     const boxes = await page
       .locator(".cargo-service-card")
-      .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
+      .evaluateAll((els) =>
+        els.map((el) => el.getBoundingClientRect().toJSON()),
+      );
     const firstRow = boxes.filter((b) => Math.abs(b.top - boxes[0].top) < 2);
     assert.equal(firstRow.length, columns, `${width}px cards per row`);
     if (columns === 2) {
@@ -193,7 +201,7 @@ try {
     );
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.locator("#about").scrollIntoViewIfNeeded();
+  await page.locator("#hubungi-kami").scrollIntoViewIfNeeded();
   await page.waitForTimeout(450);
   const offscreen = await state();
   assert(

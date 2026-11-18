@@ -30,9 +30,7 @@ try {
   assert.notEqual(before.doorScale, after.doorScale, "Doors animate");
   assert.deepEqual(before.camera, after.camera, "Isometric camera stays fixed");
   assert(after.drawCalls < 300, "Static geometry is batched");
-  await page
-    .getByRole("button", { name: "Pause animation", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Jeda animasi", exact: true }).click();
   await page.waitForTimeout(200);
   const stopped = await page.evaluate(() => window.__relayScene.time);
   await page.waitForTimeout(400);
@@ -42,30 +40,30 @@ try {
     "Pause freezes animation",
   );
   await page
-    .getByRole("button", { name: "Play animation", exact: true })
+    .getByRole("button", { name: "Putar animasi", exact: true })
     .click();
-  await page.getByRole("button", { name: "See us in motion" }).click();
+  await page.getByRole("button", { name: "Lihat kami beraksi" }).click();
   assert(await page.locator(".tour-panel").isVisible());
-  await page.getByRole("button", { name: "Close hub tour" }).click();
-  await page.getByRole("button", { name: "Let’s get moving" }).click();
-  assert(await page.locator("dialog").isVisible());
-  await page.getByLabel("Your name").fill("Alex Example");
-  await page.getByLabel("Work email").fill("alex@example.com");
-  await page.getByLabel("Moving from").fill("Jakarta");
-  await page.getByLabel("Going to").fill("Bandung");
+  await page.getByRole("button", { name: "Tutup tur" }).click();
+  await page.getByRole("button", { name: "Mulai kirim", exact: true }).click();
+  assert(await page.locator(".quote-dialog").isVisible());
+  await page.getByLabel("Nama Anda").fill("Budi Contoh");
+  await page.getByLabel("Email kantor").fill("budi@example.com");
+  await page.getByLabel("Dikirim dari").fill("Jakarta");
+  await page.getByLabel("Tujuan pengiriman").fill("Bandung");
   await page
-    .getByLabel("A little about your shipment")
-    .fill("Two pallets of packaging, ready next week.");
+    .getByLabel("Ceritakan sedikit tentang kiriman Anda")
+    .fill("Dua palet kemasan, siap minggu depan.");
   const downloaded = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Create shipment brief" }).click();
+  await page.getByRole("button", { name: "Buat ringkasan pengiriman" }).click();
   const download = await downloaded;
   assert.equal(
     download.suggestedFilename(),
-    "3-daya-terang-shipment-brief.txt",
+    "3-daya-terang-ringkasan-pengiriman.txt",
   );
   assert(await page.locator(".success-message").isVisible());
   await page.keyboard.press("Escape");
-  assert(!(await page.locator("dialog").isVisible()));
+  assert(!(await page.locator(".quote-dialog").isVisible()));
   for (const width of [390, 768]) {
     await page.setViewportSize({ width, height: 844 });
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -78,16 +76,22 @@ try {
     );
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "Open menu" }).click();
-  assert(await page.getByRole("navigation").isVisible());
-  await page.getByRole("link", { name: "Our services", exact: true }).click();
-  assert(!(await page.getByRole("navigation").isVisible()));
+  await page.getByRole("button", { name: "Buka menu" }).click();
+  assert(
+    await page.getByRole("navigation", { name: "Navigasi utama" }).isVisible(),
+  );
+  await page.getByRole("link", { name: "Layanan", exact: true }).click();
+  assert(
+    !(await page
+      .getByRole("navigation", { name: "Navigasi utama" })
+      .isVisible()),
+  );
   assert.equal(new URL(page.url()).hash, "#services");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForFunction(() => window.__relayScene?.paused === true);
   assert(
-    await page.getByRole("button", { name: "Play animation" }).isVisible(),
+    await page.getByRole("button", { name: "Putar animasi" }).isVisible(),
     "Reduced motion pauses automatically",
   );
   assert.deepEqual(errors, [], "No browser or network errors");

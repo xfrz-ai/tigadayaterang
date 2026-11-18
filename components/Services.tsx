@@ -1,53 +1,11 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import type { ServiceKind } from "./service-models";
+import { services, type Service } from "./service-data";
 
 const ServiceIllustration = dynamic(() => import("./ServiceIllustration"), {
   ssr: false,
 });
-type Service = {
-  kind: ServiceKind;
-  title: string;
-  lines: [string, string];
-  description: string;
-  /** Set to false to hide a service that is not offered yet. */
-  available: boolean;
-};
-const allServices: Service[] = [
-  {
-    kind: "road",
-    title: "Road Transportation",
-    lines: ["Road", "Transportation"],
-    description:
-      "A red delivery truck with rotating wheels travels past cargo boxes.",
-    available: true,
-  },
-  {
-    kind: "ocean",
-    title: "Ocean Freight",
-    lines: ["Ocean", "Freight"],
-    description: "A container ship floats gently among moving ripples.",
-    available: true,
-  },
-  {
-    kind: "air",
-    title: "Air Freight",
-    lines: ["Air", "Freight"],
-    description:
-      "A cargo aircraft with rotating engine fans moves gently in flight.",
-    available: true,
-  },
-  {
-    kind: "drone",
-    title: "Drone Parcel Delivery",
-    lines: ["Drone", "Parcel Delivery"],
-    description: "A four-rotor delivery drone hovers with a suspended package.",
-    // Hidden until the drone service launches.
-    available: false,
-  },
-];
-export const services = allServices.filter((s) => s.available);
 function ServiceCard({
   service,
   index,
@@ -122,7 +80,7 @@ function ServiceCard({
         </h3>
         <button
           className="cargo-service-arrow"
-          aria-label={`Enquire about ${service.title}`}
+          aria-label={`Tanya layanan ${service.title}`}
           onClick={() => onSelect(service.title)}
         >
           <svg
@@ -170,10 +128,10 @@ export default function Services({
     >
       <div className="cargo-services-inner">
         <div className="cargo-services-heading">
-          <span className="eyebrow">OUR SERVICES / EVERY WAY FORWARD</span>
+          <span className="eyebrow">LAYANAN KAMI / TIGA JALUR, SATU MITRA</span>
           <h2 id="cargo-services-heading">
-            We Provide Safe and
-            <br className="cargo-heading-break" /> Reliable Cargo Solutions.
+            Solusi Kargo yang Aman
+            <br className="cargo-heading-break" /> dan Bisa Diandalkan.
           </h2>
         </div>
         <div className="cargo-service-grid">

@@ -168,7 +168,7 @@ export function label(
   parent.add(mesh);
   return mesh;
 }
-function footprint(
+export function footprint(
   parent: THREE.Group,
   x: number,
   z: number,
@@ -188,6 +188,22 @@ function footprint(
   mesh.position.set(x, 0.014, z);
   parent.add(mesh);
 }
+/** Fades a ground line in and out along its length. */
+export function fadeTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d")!;
+  const gradient = ctx.createLinearGradient(0, 0, 0, 64);
+  gradient.addColorStop(0, "#000");
+  gradient.addColorStop(0.25, "#fff");
+  gradient.addColorStop(0.75, "#fff");
+  gradient.addColorStop(1, "#000");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 1, 64);
+  return new THREE.CanvasTexture(canvas);
+}
+
 export function cargo(w = 0.7, h = 0.65, d = 0.7, red = false) {
   const m = new Model();
   const color = red ? C.red : C.wall;
@@ -282,8 +298,7 @@ function wheel(radius = 0.46) {
 }
 export function truck(open = false) {
   const m = new Model();
-  m.box([6.1, 0.22, 1.9], [0, 0.67, 0], C.dark);
-  m.box([4.05, 0.12, 2.12], [-1, 1.04, 0], C.white);
+  truckChassis(m);
   if (!open) {
     m.box([4.05, 2.3, 2.02], [-1, 2.22, 0], C.red);
     m.box([4.08, 0.16, 2.05], [-1, 1.4, 0], C.white);
@@ -308,6 +323,23 @@ export function truck(open = false) {
       m.group.add(b);
     }
   }
+  const g = m.finish();
+  const wheels = truckWheels(g);
+  if (!open) {
+    label(g, "3 Daya Terang →", [-1, 2.35, 1.036], 2.8, 0.7, C.white);
+    label(g, "SETIAP KILO BERARTI", [-1, 1.83, 1.04], 2.4, 0.23, C.white);
+  }
+  footprint(g, 0, 0.1, 6.3, 2.25);
+  g.userData.wheels = wheels;
+  return g;
+}
+/**
+ * Chassis, cargo floor and cab shared by every truck, heading +x. The cargo
+ * body sits on the floor between x = -3 and x = 1 and is left to the caller.
+ */
+export function truckChassis(m: Model) {
+  m.box([6.1, 0.22, 1.9], [0, 0.67, 0], C.dark);
+  m.box([4.05, 0.12, 2.12], [-1, 1.04, 0], C.white);
   const s = new THREE.Shape();
   s.moveTo(-0.75, 0);
   s.lineTo(1.15, 0);
@@ -362,7 +394,9 @@ export function truck(open = false) {
   for (const z of [-0.79, 0.79])
     m.box([0.08, 0.22, 0.23], [3.04, 1.22, z], C.white);
   m.box([0.08, 0.13, 0.42], [3.07, 0.86, 0], C.white);
-  const g = m.finish();
+}
+/** Two rear axles and a steer axle, added to a finished truck group. */
+export function truckWheels(g: THREE.Group) {
   const wheels: THREE.Group[] = [];
   for (const x of [-2.1, -0.95, 2.15])
     for (const z of [-1.01, 1.01]) {
@@ -371,13 +405,7 @@ export function truck(open = false) {
       g.add(w);
       wheels.push(w);
     }
-  if (!open) {
-    label(g, "3 Daya Terang →", [-1, 2.35, 1.036], 2.8, 0.7, C.white);
-    label(g, "EVERY MILE MATTERS", [-1, 1.83, 1.04], 2.4, 0.23, C.white);
-  }
-  footprint(g, 0, 0.1, 6.3, 2.25);
-  g.userData.wheels = wheels;
-  return g;
+  return wheels;
 }
 export function person(carry = true) {
   const g = new THREE.Group(),
@@ -553,7 +581,7 @@ export function warehouse() {
     label(g, `0${i + 1}`, [-3.65 + i * 3.65, 3.35, 0.251], 0.43, 0.27);
   label(
     g,
-    "3 DAYA TERANG / FULFILLMENT CENTER",
+    "3 DAYA TERANG / PUSAT DISTRIBUSI",
     [0, 3.91, 0.281],
     6.4,
     0.38,
@@ -607,12 +635,12 @@ export function ground() {
   m.box([0.075, 0.018, 6], [-1.6, 0.024, -0.1], C.red, [0, 0, 0], false);
   m.box([10, 0.018, 0.075], [-6.55, 0.025, -3.05], C.red, [0, 0, 0], false);
   const g = m.finish();
-  label(g, "S L O W", [-7, 0.028, 8.3], 2, 0.7, "#a9aea8", [
+  label(g, "P E L A N", [-7, 0.028, 8.3], 2, 0.7, "#a9aea8", [
     -Math.PI / 2,
     0,
     0,
   ]);
-  label(g, "LOADING ONLY", [6, 0.029, 2.6], 3.5, 0.5, "#9b9f99", [
+  label(g, "BONGKAR MUAT", [6, 0.029, 2.6], 3.5, 0.5, "#9b9f99", [
     -Math.PI / 2,
     0,
     0,

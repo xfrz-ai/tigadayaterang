@@ -203,9 +203,9 @@ export default function LogisticsScene({
   if (!supported)
     return (
       <div className="scene-unavailable">
-        <span className="eyebrow">GOOD THINGS ARE ON THE WAY</span>
-        <p>Explore a connected approach to logistics below.</p>
-        <small>The animated illustration requires WebGL 2.</small>
+        <span className="eyebrow">ARMADA KAMI SEDANG BERSIAP</span>
+        <p>Lihat layanan logistik kami di bawah ini.</p>
+        <small>Ilustrasi animasi ini membutuhkan WebGL 2.</small>
       </div>
     );
   return (
