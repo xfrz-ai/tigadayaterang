@@ -148,7 +148,7 @@ export function label(
     ctx.font = "bold 130px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, 512, 139);
+    ctx.fillText(text, 512, 139, 960);
     texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     textTextures.set(key, texture);
@@ -372,7 +372,7 @@ export function truck(open = false) {
       wheels.push(w);
     }
   if (!open) {
-    label(g, "relay →", [-1, 2.35, 1.036], 2.8, 0.7, C.white);
+    label(g, "3 Daya Terang →", [-1, 2.35, 1.036], 2.8, 0.7, C.white);
     label(g, "EVERY MILE MATTERS", [-1, 1.83, 1.04], 2.4, 0.23, C.white);
   }
   footprint(g, 0, 0.1, 6.3, 2.25);
@@ -553,7 +553,7 @@ export function warehouse() {
     label(g, `0${i + 1}`, [-3.65 + i * 3.65, 3.35, 0.251], 0.43, 0.27);
   label(
     g,
-    "relay  /  FULFILLMENT CENTER",
+    "3 DAYA TERANG / FULFILLMENT CENTER",
     [0, 3.91, 0.281],
     6.4,
     0.38,

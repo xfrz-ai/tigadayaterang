@@ -240,7 +240,7 @@ function ocean(): ServiceModel {
         );
         ship.add(c);
       }
-  label(ship, "RELAY CARGO", [0, 0.74, 1.37], 2.45, 0.28, C.white);
+  label(ship, "3 DAYA TERANG", [0, 0.74, 1.37], 2.45, 0.28, C.white);
   batchStatic(ship);
   root.add(ship);
   const water = new THREE.Mesh(
@@ -418,7 +418,7 @@ function airplane(): ServiceModel {
     aircraft.add(rotor);
   }
   aircraft.add(m.finish());
-  label(aircraft, "relay", [-0.2, 1.64, 0.672], 1.55, 0.38, C.red);
+  label(aircraft, "3 Daya Terang", [-0.2, 1.64, 0.672], 2.5, 0.38, C.red);
   batchStatic(aircraft, jets);
   root.add(aircraft);
   shadow(root, 8.2, 4.5, 0.3, 0.3);

@@ -26,12 +26,12 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
 }
 function Brand() {
   return (
-    <a className="brand" href="#home" aria-label="Relay home">
+    <a className="brand" href="#home" aria-label="3 Daya Terang home">
       <svg viewBox="0 0 36 36" aria-hidden="true">
         <path d="M3 7h20l10 11-10 11H3l10-11z" fill="currentColor" />
         <path d="M3 18h18" stroke="#f6f5f1" strokeWidth="4" />
       </svg>
-      relay<span>®</span>
+      3 Daya Terang
     </a>
   );
 }
@@ -87,7 +87,7 @@ export default function Home() {
               How it works
             </a>
             <a href="#about" onClick={() => setMenu(false)}>
-              Why Relay
+              Why 3 Daya Terang
             </a>
           </nav>
           <button className="header-cta" onClick={openQuote}>
@@ -169,7 +169,7 @@ export default function Home() {
         </div>
         <div className="scene-status" id="hub-tour">
           <span className={`status-dot ${paused ? "stopped" : ""}`} />
-          <span>INSIDE THE RELAY HUB</span>
+          <span>INSIDE THE 3 DAYA TERANG HUB</span>
           <span className="status-divider" />
           <button
             onClick={() => setPaused(!paused)}
@@ -199,8 +199,8 @@ export default function Home() {
             <h3>Every move is connected.</h3>
             <p>
               Follow the trucks, watch the forklifts, and peek inside the
-              loading bays. This live 3D illustration brings the Relay journey
-              to life.
+              loading bays. This live 3D illustration brings the 3 Daya Terang
+              journey to life.
             </p>
             <a href="#how-it-works" onClick={() => setTour(false)}>
               Explore the process <Arrow />
@@ -290,7 +290,9 @@ export default function Home() {
       <footer className="footer">
         <Brand />
         <p>Good things. Delivered.</p>
-        <span>© {new Date().getFullYear()} Relay · Concept experience</span>
+        <span>
+          © {new Date().getFullYear()} 3 Daya Terang · Concept experience
+        </span>
         <a href="#home">Back to the top ↑</a>
       </footer>
       <dialog
@@ -345,13 +347,13 @@ export default function Home() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const data = new FormData(e.currentTarget);
-                const brief = `RELAY — SHIPMENT BRIEF\n\nName: ${data.get("name")}\nEmail: ${data.get("email")}\nService: ${data.get("service")}\nOrigin: ${data.get("origin")}\nDestination: ${data.get("destination")}\nDetails: ${data.get("details")}\n\nPrepared locally. No enquiry has been sent.\n`;
+                const brief = `3 DAYA TERANG — SHIPMENT BRIEF\n\nName: ${data.get("name")}\nEmail: ${data.get("email")}\nService: ${data.get("service")}\nOrigin: ${data.get("origin")}\nDestination: ${data.get("destination")}\nDetails: ${data.get("details")}\n\nPrepared locally. No enquiry has been sent.\n`;
                 const url = URL.createObjectURL(
                   new Blob([brief], { type: "text/plain" }),
                 );
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "relay-shipment-brief.txt";
+                a.download = "3-daya-terang-shipment-brief.txt";
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
                 setSubmitted(true);

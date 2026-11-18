@@ -63,7 +63,10 @@ try {
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Create shipment brief" }).click();
   const download = await downloaded;
-  assert.equal(download.suggestedFilename(), "relay-shipment-brief.txt");
+  assert.equal(
+    download.suggestedFilename(),
+    "3-daya-terang-shipment-brief.txt",
+  );
   assert(await page.locator(".success-message").isVisible());
   await page.keyboard.press("Escape");
   assert(!(await page.locator("dialog").isVisible()));

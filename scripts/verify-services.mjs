@@ -39,7 +39,16 @@ try {
       s.indexOf('<section className="hero"'),
       s.indexOf("</section>") + 10,
     );
-  assert.equal(hero(source), hero(previous), "Hero markup is unchanged");
+  const normalizeBrand = (text) =>
+    text
+      .replaceAll("3 Daya Terang", "Relay")
+      .replaceAll("3 DAYA TERANG", "RELAY")
+      .replace(/\s+/g, " ");
+  assert.equal(
+    normalizeBrand(hero(source)),
+    normalizeBrand(hero(previous)),
+    "Hero layout is unchanged apart from branding",
+  );
   assert.equal(
     await readFile("components/LogisticsScene.tsx", "utf8"),
     execFileSync(

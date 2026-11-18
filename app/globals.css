@@ -81,12 +81,15 @@ button:disabled {
 .brand {
   display: inline-flex;
   align-items: center;
-  font-size: 38px;
-  letter-spacing: -2.3px;
+  font-size: 28px;
+  letter-spacing: -1.1px;
+  white-space: nowrap;
+  flex-shrink: 0;
   font-weight: 750;
   line-height: 1;
 }
 .brand svg {
+  flex-shrink: 0;
   width: 33px;
   height: 33px;
   color: var(--red);
@@ -620,7 +623,7 @@ h2 {
   gap: 34px;
 }
 .footer .brand {
-  font-size: 30px;
+  font-size: 26px;
 }
 .footer .brand svg {
   width: 28px;
@@ -825,11 +828,13 @@ h2 {
     padding: 0 23px;
   }
   .brand {
-    font-size: 33px;
+    font-size: 20px;
+    letter-spacing: -0.8px;
   }
   .brand svg {
-    width: 29px;
-    height: 29px;
+    width: 26px;
+    height: 26px;
+    margin-right: 6px;
   }
   .header-cta {
     padding: 11px 12px;
@@ -1318,5 +1323,23 @@ h2 {
   }
   .cargo-services + .process {
     padding-top: 65px;
+  }
+}
+
+@media (max-width: 370px) {
+  .header {
+    padding: 0 18px;
+  }
+  .header .brand {
+    font-size: 18px;
+  }
+  .header .brand svg {
+    width: 23px;
+    height: 23px;
+  }
+  .header-cta {
+    margin-right: 13px;
+    padding: 10px;
+    gap: 10px;
   }
 }

@@ -1,4 +1,4 @@
-# Relay — Good things. Delivered.
+# 3 Daya Terang — Good things. Delivered.
 
 A responsive logistics landing page in Next.js, React Three Fiber, and Three.js. All hero objects are procedural geometry rendered live in WebGL; no models, hero images, or video assets are used.
 
