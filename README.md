@@ -44,3 +44,14 @@ The Services section directly below the hero presents road transportation, ocean
 Each card loads as it approaches the viewport, runs independently while visible, and pauses offscreen, when the tab is hidden, or when reduced motion is enabled. Hover or keyboard focus smoothly increases animation speed and highlights the enquiry button. Selecting a service opens the existing shipment brief with that service selected.
 
 Run `node scripts/verify-services.mjs` against the dev server (or set `VERIFY_URL`) to check animation, hover, service selection, responsive columns, offscreen pausing, reduced motion, and preservation of the original hero.
+
+## Deploy to Cloudflare Workers
+
+The site is a static export served as Workers static assets (`wrangler.jsonc` points at `out/`, no Worker script).
+
+In Cloudflare: **Workers & Pages → Create → Import a repository**, select this repo, then set:
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+
+Node 22 is pinned in `.node-version`. `public/_headers` sets long-lived caching for `/_next/static/*` and `/fonts/*`. Unknown paths serve `404.html`.
