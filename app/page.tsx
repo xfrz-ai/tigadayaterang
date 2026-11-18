@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import About from "@/components/About";
 import Brand from "@/components/Brand";
 import Footer from "@/components/Footer";
+import MenuDrawer, { NAV_LINKS } from "@/components/MenuDrawer";
 import Contact from "@/components/Contact";
 import { WhatsAppIcon } from "@/components/icons";
 import Services from "@/components/Services";
@@ -39,13 +40,20 @@ export default function Home() {
   const [menu, setMenu] = useState(false),
     [paused, setPaused] = useState(false),
     [ready, setReady] = useState(false),
-    [tour, setTour] = useState(false),
     [submitted, setSubmitted] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
   const [hidden, setHidden] = useState(false);
+  // On tablets and phones the header is fixed; it tightens once the page scrolls.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const onReady = useCallback(() => setReady(true), []);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
@@ -73,24 +81,14 @@ export default function Home() {
   return (
     <main>
       <section className="hero" id="home">
-        <header className="header">
+        <header className={scrolled ? "header is-scrolled" : "header"}>
           <Brand />
-          <nav
-            aria-label="Navigasi utama"
-            className={menu ? "nav open" : "nav"}
-          >
-            <a href="#services" onClick={() => setMenu(false)}>
-              Layanan
-            </a>
-            <a href="#tentang-kami" onClick={() => setMenu(false)}>
-              Tentang kami
-            </a>
-            <a href="#testimoni" onClick={() => setMenu(false)}>
-              Testimoni
-            </a>
-            <a href="#how-it-works" onClick={() => setMenu(false)}>
-              Cara kerja
-            </a>
+          <nav aria-label="Navigasi utama" className="nav">
+            {NAV_LINKS.map(([label, href]) => (
+              <a key={href} href={href}>
+                {label}
+              </a>
+            ))}
           </nav>
           <button className="header-cta" onClick={openQuote}>
             <span className="header-cta-label">Hubungi kami</span>
@@ -98,11 +96,19 @@ export default function Home() {
           </button>
           <button
             className="menu-toggle"
-            aria-label={menu ? "Tutup menu" : "Buka menu"}
+            aria-label="Buka menu"
             aria-expanded={menu}
-            onClick={() => setMenu(!menu)}
+            aria-controls="menu-drawer"
+            onClick={() => setMenu(true)}
           >
-            {menu ? "✕" : "☰"}
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3 6.5h18M3 12h18M9 17.5h12"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
         </header>
         <div className="hero-copy">
@@ -121,28 +127,23 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <button className="button primary" onClick={openQuote}>
-              Mulai kirim <Arrow />
+              Mulai kirim barang <Arrow />
             </button>
-            <button
-              className="watch-button"
-              onClick={() => {
-                setTour(!tour);
-                document
-                  .getElementById("hub-tour")
-                  ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-              }}
-            >
+            <a className="watch-button" href="#services">
               <span className="play-icon">
-                {tour ? (
-                  "−"
-                ) : (
-                  <svg viewBox="0 0 12 12" aria-hidden="true">
-                    <path d="m4 2 6 4-6 4z" fill="currentColor" />
-                  </svg>
-                )}
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                  <path
+                    d="M6 2v8M2.8 6.8 6 10l3.2-3.2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </span>
-              Lihat kami beraksi
-            </button>
+              Lihat layanan kami
+            </a>
           </div>
         </div>
         <div
@@ -162,7 +163,7 @@ export default function Home() {
             </div>
           )}
         </div>
-        <div className="scene-status" id="hub-tour">
+        <div className="scene-status">
           <span className={`status-dot ${paused ? "stopped" : ""}`} />
           <button
             onClick={() => setPaused(!paused)}
@@ -179,27 +180,6 @@ export default function Home() {
             )}
           </button>
         </div>
-        {tour && (
-          <aside className="tour-panel">
-            <button
-              className="close-small"
-              aria-label="Tutup tur"
-              onClick={() => setTour(false)}
-            >
-              ×
-            </button>
-            <span className="eyebrow">DUNIA KECIL YANG TAK PERNAH DIAM</span>
-            <h3>Setiap gerak saling terhubung.</h3>
-            <p>
-              Ikuti truk yang datang dan pergi, forklift yang sibuk memindahkan
-              palet, dan aktivitas di area bongkar muat. Ilustrasi 3D ini
-              menghidupkan perjalanan barang Anda bersama 3 Daya Terang.
-            </p>
-            <a href="#how-it-works" onClick={() => setTour(false)}>
-              Lihat cara kerja kami <Arrow />
-            </a>
-          </aside>
-        )}
       </section>
       <Services
         onSelect={(service) => {
@@ -263,6 +243,7 @@ export default function Home() {
       </section>
       <Contact onContact={openQuote} />
       <Footer onQuote={openQuote} />
+      <MenuDrawer open={menu} onClose={() => setMenu(false)} />
       <dialog
         ref={dialog}
         aria-label="Buat ringkasan pengiriman"

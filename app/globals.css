@@ -246,9 +246,12 @@ h1 span {
   font-size: 16px;
 }
 .play-icon svg {
-  width: 10px;
-  height: 10px;
-  margin-left: 2px;
+  width: 11px;
+  height: 11px;
+}
+.watch-button:hover .play-icon {
+  border-color: var(--red);
+  color: var(--red);
 }
 .scene {
   position: absolute;
@@ -325,45 +328,6 @@ h1 span {
 .scene-status svg {
   width: 10px;
   height: 10px;
-}
-.tour-panel {
-  position: absolute;
-  z-index: 5;
-  right: 4.5%;
-  bottom: 139px;
-  background: var(--white);
-  padding: 28px;
-  width: 320px;
-  border: 1px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
-}
-.tour-panel .eyebrow {
-  font-size: 8px;
-  color: var(--red);
-}
-.tour-panel h3 {
-  font-size: 22px;
-  letter-spacing: -0.7px;
-  margin: 15px 0;
-}
-.tour-panel p {
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--muted);
-}
-.tour-panel a {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-top: 20px;
-}
-.close-small {
-  position: absolute;
-  right: 8px;
-  top: 4px;
-  background: none;
-  border: 0;
-  font-size: 24px;
 }
 .section {
   max-width: 1312px;
@@ -678,38 +642,6 @@ h2 {
     font-size: 23px;
   }
 }
-/* Four section links need about 860px; below that they fold into the menu. */
-@media (max-width: 860px) {
-  .header-cta {
-    margin-left: auto;
-    margin-right: 22px;
-  }
-  .menu-toggle {
-    display: block;
-    background: none;
-    border: 0;
-    font-size: 20px;
-    width: 24px;
-    padding: 0;
-  }
-  .nav {
-    display: none;
-    margin: 0;
-    position: absolute;
-    left: 20px;
-    right: 20px;
-    top: 76px;
-    background: var(--white);
-    padding: 26px;
-    border: 1px solid var(--ink);
-    box-shadow: 4px 4px 0 var(--ink);
-  }
-  .nav.open {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-}
 @media (max-width: 700px) {
   .hero {
     min-height: 800px;
@@ -794,11 +726,6 @@ h2 {
     padding: 10px;
     font-size: 7px;
     letter-spacing: 0.9px;
-  }
-  .tour-panel {
-    bottom: 128px;
-    right: 20px;
-    width: min(320px, calc(100% - 40px));
   }
   .section {
     padding: 65px 24px;
@@ -2236,5 +2163,213 @@ h2 {
   }
   .footer-nav {
     gap: 24px;
+  }
+}
+
+/* Tablets (every iPad up to 1194px landscape) and phones: the header stays
+   fixed at the top and tightens after scrolling. The hero keeps the header's
+   full height as padding, so its layout is unchanged. */
+@media (max-width: 1194px) {
+  html {
+    scroll-padding-top: 72px;
+  }
+  .hero {
+    padding-top: 105px;
+  }
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    max-width: none;
+    background: var(--paper);
+    border-bottom: 1px solid transparent;
+    transition:
+      height 0.25s,
+      border-color 0.25s;
+  }
+  .header.is-scrolled {
+    height: 72px;
+    border-bottom-color: var(--line);
+  }
+}
+@media (max-width: 700px) {
+  html {
+    scroll-padding-top: 64px;
+  }
+  .hero {
+    padding-top: 83px;
+  }
+  .header.is-scrolled {
+    height: 64px;
+  }
+}
+
+/* Tablets and phones: the section links move into a panel that slides in
+   from the right (components/MenuDrawer.tsx). */
+.drawer {
+  display: none;
+}
+@media (max-width: 1194px) {
+  .nav {
+    display: none;
+  }
+  .header-cta {
+    margin-left: auto;
+    margin-right: 18px;
+  }
+  .menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-right: -8px;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--ink);
+  }
+  .drawer {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    visibility: hidden;
+    transition: visibility 0s linear 0.4s;
+  }
+  .drawer.is-open {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(36, 40, 39, 0.45);
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .drawer.is-open .drawer-backdrop {
+    opacity: 1;
+  }
+  .drawer-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(400px, 88vw);
+    display: flex;
+    flex-direction: column;
+    padding: 0 28px 32px;
+    background: var(--paper);
+    border-left: 1px solid var(--ink);
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .drawer.is-open .drawer-panel {
+    transform: none;
+  }
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 72px;
+    border-bottom: 1px solid var(--line);
+  }
+  .drawer-close {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-right: -8px;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+  .drawer nav ul {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .drawer nav li {
+    opacity: 0;
+    transform: translateX(28px);
+    transition:
+      opacity 0.3s,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Links follow the panel in one after another. */
+  .drawer.is-open nav li {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(0.12s + var(--i) * 0.05s);
+  }
+  .drawer nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 24px;
+    font-weight: 550;
+    letter-spacing: -0.6px;
+    transition: color 0.2s;
+  }
+  .drawer nav a svg {
+    color: var(--red);
+    transition: transform 0.2s;
+  }
+  .drawer nav a:hover {
+    color: var(--red);
+  }
+  .drawer nav a:hover svg {
+    transform: translateX(4px);
+  }
+  .drawer-foot {
+    margin-top: auto;
+    padding-top: 40px;
+  }
+  .drawer-foot .eyebrow {
+    color: var(--muted);
+  }
+  .drawer-social {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .drawer-social a {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    transition:
+      color 0.2s,
+      border-color 0.2s;
+  }
+  .drawer-social a:hover {
+    color: var(--red);
+    border-color: var(--red);
+  }
+  /* The page behind an open menu stays put. */
+  html.menu-locked {
+    overflow: hidden;
+  }
+}
+@media (max-width: 700px) {
+  .drawer-head {
+    min-height: 64px;
+  }
+  .drawer-panel {
+    padding: 0 22px 28px;
+  }
+  .drawer nav a {
+    font-size: 22px;
+    padding: 18px 0;
   }
 }

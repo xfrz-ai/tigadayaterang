@@ -42,10 +42,15 @@ try {
   await page
     .getByRole("button", { name: "Putar animasi", exact: true })
     .click();
-  await page.getByRole("button", { name: "Lihat kami beraksi" }).click();
-  assert(await page.locator(".tour-panel").isVisible());
-  await page.getByRole("button", { name: "Tutup tur" }).click();
-  await page.getByRole("button", { name: "Mulai kirim", exact: true }).click();
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Lihat layanan kami" })
+      .getAttribute("href"),
+    "#services",
+  );
+  await page
+    .getByRole("button", { name: "Mulai kirim barang", exact: true })
+    .click();
   assert(await page.locator(".quote-dialog").isVisible());
   await page.getByLabel("Nama Anda").fill("Budi Contoh");
   await page.getByLabel("Email kantor").fill("budi@example.com");
@@ -81,11 +86,10 @@ try {
     await page.getByRole("navigation", { name: "Navigasi utama" }).isVisible(),
   );
   await page.getByRole("link", { name: "Layanan", exact: true }).click();
-  assert(
-    !(await page
-      .getByRole("navigation", { name: "Navigasi utama" })
-      .isVisible()),
-  );
+  // The menu slides away, then leaves the accessibility tree.
+  await page
+    .getByRole("navigation", { name: "Navigasi utama" })
+    .waitFor({ state: "hidden", timeout: 2000 });
   assert.equal(new URL(page.url()).hash, "#services");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(url, { waitUntil: "networkidle" });
@@ -102,7 +106,7 @@ try {
       "fixed camera",
       "geometry batching",
       "pause/resume",
-      "hub tour",
+      "services link",
       "shipment brief download",
       "dialog keyboard dismissal",
       "desktop/tablet/mobile layout",

@@ -25,7 +25,7 @@ Open http://localhost:3000. Run `npm run build` for a static production export i
 
 ## Interactions
 
-Navigation links scroll to real sections. The scene tour and pause control work independently of the animation. The enquiry modal creates a downloadable shipment brief locally. No enquiry is sent and no data is stored or sent to a backend; connect a real business endpoint before using it to receive leads.
+Navigation links scroll to real sections. On tablets and phones (up to 1194px, which covers every iPad except the 12.9-inch in landscape) the header stays fixed at the top and tightens after scrolling, and the section links move into a panel that slides in from the right (`components/MenuDrawer.tsx`: logo, links, social icons at the bottom; Escape or the backdrop closes it); `node scripts/verify-header.mjs` checks it. The hero's "Lihat layanan kami" link jumps to the services. The pause control works independently of the animation. The enquiry modal creates a downloadable shipment brief locally. No enquiry is sent and no data is stored or sent to a backend; connect a real business endpoint before using it to receive leads.
 
 ## Verification
 
