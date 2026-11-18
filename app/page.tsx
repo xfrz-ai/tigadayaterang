@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import Services from "@/components/Services";
+import Services, { services } from "@/components/Services";
 import { useCallback, useEffect, useRef, useState } from "react";
 const LogisticsScene = dynamic(() => import("@/components/LogisticsScene"), {
   ssr: false,
@@ -387,10 +387,9 @@ export default function Home() {
                   value={selectedService}
                   onChange={(e) => setSelectedService(e.target.value)}
                 >
-                  <option>Road Transportation</option>
-                  <option>Ocean Freight</option>
-                  <option>Air Freight</option>
-                  <option>Drone Parcel Delivery</option>
+                  {services.map((s) => (
+                    <option key={s.kind}>{s.title}</option>
+                  ))}
                   <option>Freight transport</option>
                   <option>Warehousing & fulfillment</option>
                   <option>Last-mile delivery</option>

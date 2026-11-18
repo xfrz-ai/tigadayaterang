@@ -1124,7 +1124,7 @@ h2 {
 }
 .cargo-service-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 23px;
 }
 .cargo-service-card {
@@ -1148,6 +1148,17 @@ h2 {
   display: block;
   touch-action: pan-y !important;
   pointer-events: none;
+}
+/* Inner walls of the recess the scene sinks into on hover; driven per frame. */
+.cargo-service-depth {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  color: var(--ink);
+  pointer-events: none;
+  visibility: hidden;
 }
 .cargo-service-index {
   position: absolute;
@@ -1248,9 +1259,16 @@ h2 {
   }
 }
 @media (max-width: 1000px) {
+  /* Two per row; an odd last card sits centred beneath them. */
   .cargo-service-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px;
+  }
+  .cargo-service-card {
+    grid-column: span 2;
+  }
+  .cargo-service-card:last-child:nth-child(odd) {
+    grid-column: 2 / span 2;
   }
   .cargo-services {
     padding: 69px 0 72px;
@@ -1300,6 +1318,10 @@ h2 {
   .cargo-service-grid {
     grid-template-columns: 1fr;
     gap: 22px;
+  }
+  .cargo-service-card,
+  .cargo-service-card:last-child:nth-child(odd) {
+    grid-column: auto;
   }
   .cargo-service-art {
     aspect-ratio: 1/0.96;

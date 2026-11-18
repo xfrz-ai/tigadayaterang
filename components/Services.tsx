@@ -1,29 +1,35 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import type { ServiceKind } from "./service-models";
+import type { PointerState } from "./ServiceIllustration";
 
 const ServiceIllustration = dynamic(() => import("./ServiceIllustration"), {
   ssr: false,
 });
-const services: {
+type Service = {
   kind: ServiceKind;
   title: string;
   lines: [string, string];
   description: string;
-}[] = [
+  /** Set to false to hide a service that is not offered yet. */
+  available: boolean;
+};
+const allServices: Service[] = [
   {
     kind: "road",
     title: "Road Transportation",
     lines: ["Road", "Transportation"],
     description:
       "A red delivery truck with rotating wheels travels past cargo boxes.",
+    available: true,
   },
   {
     kind: "ocean",
     title: "Ocean Freight",
     lines: ["Ocean", "Freight"],
     description: "A container ship floats gently among moving ripples.",
+    available: true,
   },
   {
     kind: "air",
@@ -31,26 +37,39 @@ const services: {
     lines: ["Air", "Freight"],
     description:
       "A cargo aircraft with rotating engine fans moves gently in flight.",
+    available: true,
   },
   {
     kind: "drone",
     title: "Drone Parcel Delivery",
     lines: ["Drone", "Parcel Delivery"],
     description: "A four-rotor delivery drone hovers with a suspended package.",
+    // Hidden until the drone service launches.
+    available: false,
   },
 ];
+export const services = allServices.filter((s) => s.available);
 function ServiceCard({
   service,
   index,
   active,
   onSelect,
 }: {
-  service: (typeof services)[number];
+  service: Service;
   index: number;
   active: boolean;
   onSelect: (service: string) => void;
 }) {
-  const card = useRef<HTMLElement>(null);
+  const card = useRef<HTMLElement>(null),
+    art = useRef<HTMLDivElement>(null),
+    pointer = useRef<PointerState>({ x: 0, y: 0 });
+  const trackPointer = (e: PointerEvent) => {
+    const rect = art.current?.getBoundingClientRect();
+    if (!rect?.width || !rect.height) return;
+    const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+    pointer.current.x = clamp(((e.clientX - rect.left) / rect.width) * 2 - 1);
+    pointer.current.y = clamp(((e.clientY - rect.top) / rect.height) * 2 - 1);
+  };
   const [visible, setVisible] = useState(false),
     [loaded, setLoaded] = useState(false),
     [hovered, setHovered] = useState(false);
@@ -82,14 +101,22 @@ function ServiceCard({
       ref={card}
       className={`cargo-service-card${hovered ? " is-engaged" : ""}`}
       data-service={service.kind}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
+      onPointerEnter={(e) => {
+        trackPointer(e);
+        setHovered(true);
+      }}
+      onPointerMove={trackPointer}
+      onPointerLeave={() => {
+        pointer.current.x = pointer.current.y = 0;
+        setHovered(false);
+      }}
       onFocusCapture={() => setHovered(true)}
       onBlurCapture={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setHovered(false);
       }}
     >
       <div
+        ref={art}
         className="cargo-service-art"
         role="img"
         aria-label={service.description}
@@ -102,6 +129,7 @@ function ServiceCard({
             kind={service.kind}
             running={active && visible}
             hovered={hovered}
+            pointer={pointer}
           />
         )}
       </div>
