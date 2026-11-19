@@ -287,48 +287,6 @@ h1 span {
   border-radius: 50%;
   animation: pulse 1s infinite;
 }
-.scene-status {
-  position: absolute;
-  z-index: 3;
-  right: 4.5%;
-  bottom: 83px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 12px 13px;
-  background: rgba(246, 245, 241, 0.92);
-  border: 1px solid #cfd3ca;
-  border-radius: 3px;
-  font-size: 8px;
-  letter-spacing: 1.3px;
-  font-weight: 600;
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  background: var(--red);
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px #ed413518;
-  animation: pulse 2.5s infinite;
-}
-.status-dot.stopped {
-  background: var(--muted);
-  animation: none;
-  box-shadow: none;
-}
-.scene-status button {
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: none;
-  width: 18px;
-  height: 18px;
-}
-.scene-status svg {
-  width: 10px;
-  height: 10px;
-}
 .section {
   max-width: 1312px;
   margin: 0 auto;
@@ -624,13 +582,6 @@ h2 {
     left: -100px;
     right: -100px;
     mask-image: linear-gradient(to bottom, transparent, black 45px);
-  }
-  .scene-status {
-    right: 20px;
-    bottom: 74px;
-    padding: 10px;
-    font-size: 7px;
-    letter-spacing: 0.9px;
   }
   .section {
     padding: 65px 24px;

@@ -154,23 +154,6 @@ export default function Home() {
             </div>
           )}
         </div>
-        <div className="scene-status">
-          <span className={`status-dot ${paused ? "stopped" : ""}`} />
-          <button
-            onClick={() => setPaused(!paused)}
-            aria-label={paused ? "Putar animasi" : "Jeda animasi"}
-          >
-            {paused ? (
-              <svg viewBox="0 0 12 12">
-                <path d="m3 2 7 4-7 4z" fill="currentColor" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 12 12">
-                <path d="M4 2v8M8 2v8" stroke="currentColor" strokeWidth="2" />
-              </svg>
-            )}
-          </button>
-        </div>
       </section>
       <Services />
       <About />
