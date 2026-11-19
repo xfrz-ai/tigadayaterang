@@ -66,6 +66,30 @@ export const WHATSAPP = {
   schema: "+62-821-1494-4419",
 };
 /**
+ * WhatsApp chat link with an opening message already typed in, so visitors
+ * only need to fill in the blanks and press send. Pass a service title to
+ * mention the service they picked.
+ */
+export function whatsappChat(service?: string) {
+  const intro = service
+    ? `Halo 3 Daya Terang, saya tertarik dengan layanan ${service} dan ingin konsultasi pengiriman barang.`
+    : "Halo 3 Daya Terang, saya ingin konsultasi pengiriman barang.";
+  const message = [
+    intro,
+    "",
+    "Nama:",
+    "Barang yang dikirim:",
+    "Perkiraan berat/jumlah:",
+    "Dikirim dari:",
+    "Tujuan:",
+    "",
+    "Terima kasih.",
+  ].join("\n");
+  return `${WHATSAPP.href}?text=${encodeURIComponent(message)}`;
+}
+/** Props for links that open WhatsApp in a new tab. */
+export const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
+/**
  * Social profiles shown in the footer.
  * TODO: these point at each platform's home page until the company's profile
  * URLs are known. Put the real URLs here, and add them to the Organization's

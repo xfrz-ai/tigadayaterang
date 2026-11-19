@@ -1,10 +1,12 @@
 import {
   ADDRESS,
+  EXTERNAL as external,
   MAP_URL,
   PHONE,
   SITE_LEGAL_NAME,
   SOCIAL,
   WHATSAPP,
+  whatsappChat,
 } from "@/lib/site";
 import Brand from "./Brand";
 import { MapPinIcon, SocialIcon } from "./icons";
@@ -17,9 +19,8 @@ const PAGE_LINKS = [
   ["Testimoni", "#testimoni"],
   ["Cara kerja", "#how-it-works"],
 ] as const;
-const external = { target: "_blank", rel: "noopener noreferrer" } as const;
 
-export default function Footer({ onQuote }: { onQuote: () => void }) {
+export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-top">
@@ -66,7 +67,9 @@ export default function Footer({ onQuote }: { onQuote: () => void }) {
               </li>
             ))}
             <li>
-              <button onClick={onQuote}>Minta penawaran</button>
+              <a href={whatsappChat()} {...external}>
+                Minta penawaran
+              </a>
             </li>
             <li>
               <a href="#hubungi-kami">Hubungi kami</a>

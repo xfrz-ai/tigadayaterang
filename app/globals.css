@@ -483,102 +483,6 @@ h2 {
   max-width: 340px;
   margin: 0;
 }
-.quote-dialog {
-  position: fixed;
-  max-height: 92svh;
-  width: min(570px, calc(100% - 32px));
-  border: 1px solid var(--ink);
-  padding: 40px;
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: 7px 7px 0 #272a2b;
-}
-.quote-dialog::backdrop {
-  background: #151c1c85;
-  backdrop-filter: blur(5px);
-}
-.dialog-close {
-  position: absolute;
-  right: 16px;
-  top: 10px;
-  border: 0;
-  background: transparent;
-  font-size: 30px;
-  line-height: 1;
-  padding: 7px;
-}
-.quote-dialog > .eyebrow {
-  color: var(--red);
-}
-.quote-dialog h2 {
-  font-size: 43px;
-  margin-top: 18px;
-}
-.quote-dialog p {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.7;
-  max-width: 370px;
-}
-.quote-dialog form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-.quote-dialog label {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  font-size: 11px;
-  font-weight: 550;
-  width: 100%;
-}
-.form-row {
-  display: flex;
-  gap: 15px;
-}
-.quote-dialog input,
-.quote-dialog select,
-.quote-dialog textarea {
-  border: 1px solid #d5d8ce;
-  padding: 11px;
-  width: 100%;
-  min-width: 0;
-  background: var(--white);
-  color: var(--ink);
-  font-size: 12px;
-  border-radius: 0;
-  outline-offset: 3px;
-}
-.quote-dialog input:focus,
-.quote-dialog select:focus,
-.quote-dialog textarea:focus {
-  outline: 1px solid var(--red);
-}
-.quote-dialog small {
-  font-size: 9px;
-  color: var(--muted);
-  text-align: center;
-}
-.quote-dialog textarea {
-  resize: vertical;
-}
-.success-message {
-  padding: 18px 0;
-}
-.success-message > .eyebrow {
-  display: block;
-}
-.success-icon {
-  font-size: 64px;
-  display: block;
-  color: var(--red);
-  margin-bottom: 15px;
-}
-.success-message .button {
-  margin-top: 20px;
-}
 .scene-unavailable {
   text-align: center;
   position: absolute;
@@ -683,8 +587,9 @@ h2 {
     font-size: 8px;
     letter-spacing: 1.6px;
   }
+  /* Sized so "Tarif bersahabat." stays on one line. */
   h1 {
-    font-size: clamp(57px, 13.6vw, 86px);
+    font-size: clamp(40px, 11.6vw, 78px);
     letter-spacing: -3.8px;
     line-height: 1.04;
     margin-top: 22px;
@@ -803,20 +708,6 @@ h2 {
   }
   .steps h3 {
     font-size: 18px;
-  }
-  .quote-dialog {
-    padding: 30px 23px;
-  }
-  .quote-dialog h2 {
-    font-size: 37px;
-  }
-  .form-row {
-    gap: 10px;
-  }
-  .quote-dialog input,
-  .quote-dialog select,
-  .quote-dialog textarea {
-    font-size: 16px;
   }
   .desktop-break {
     display: none;
@@ -1072,9 +963,9 @@ h2 {
 }
 
 @media (max-width: 370px) {
-  /* Keep "Bisnis melaju." on one line on the narrowest phones. */
+  /* Keep "Tarif bersahabat." on one line on the narrowest phones. */
   h1 {
-    font-size: 14.4vw;
+    font-size: 11.6vw;
     letter-spacing: -3px;
   }
   .header {
@@ -1177,7 +1068,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 18px 30px;
-  margin: 28px 0 36px;
+  margin: 28px 0 0;
   padding-top: 22px;
   border-top: 1px solid var(--line);
 }
@@ -1716,7 +1607,7 @@ h2 {
   line-height: 1.9;
   color: #575c56;
   max-width: 380px;
-  margin: 26px 0 40px;
+  margin: 26px 0 0;
 }
 .why-list {
   --stagger: 140px;
@@ -1849,7 +1740,7 @@ h2 {
   }
   .why-intro p {
     font-size: 13px;
-    margin: 20px 0 30px;
+    margin: 20px 0 0;
   }
   .why-item {
     gap: 16px;
@@ -2069,8 +1960,7 @@ h2 {
   padding: 0;
   list-style: none;
 }
-.footer-nav a,
-.footer-nav button {
+.footer-nav a {
   padding: 0;
   border: 0;
   background: none;
@@ -2096,7 +1986,6 @@ h2 {
   color: var(--muted);
 }
 .footer-nav a:hover,
-.footer-nav button:hover,
 .footer-contact a:hover,
 .footer-map:hover {
   color: var(--red);

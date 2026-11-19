@@ -11,7 +11,7 @@ const FACTS = [
   ["Jalur kirim", "Darat · Laut · Udara"],
 ] as const;
 
-export default function About({ onContact }: { onContact: () => void }) {
+export default function About() {
   const stage = useRef<HTMLDivElement>(null);
   const { loaded, running } = useLazyScene(stage);
   return (
@@ -52,24 +52,6 @@ export default function About({ onContact }: { onContact: () => void }) {
                 </div>
               ))}
             </dl>
-            <button className="button outline" onClick={onContact}>
-              Diskusikan kiriman Anda
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 18 18 6M6 6h12v12"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
           </div>
         </div>
       </div>

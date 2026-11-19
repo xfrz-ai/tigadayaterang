@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import { EXTERNAL, whatsappChat } from "@/lib/site";
 import { services, type Service } from "./service-data";
 
 const ServiceIllustration = dynamic(() => import("./ServiceIllustration"), {
@@ -10,12 +11,10 @@ function ServiceCard({
   service,
   index,
   active,
-  onSelect,
 }: {
   service: Service;
   index: number;
   active: boolean;
-  onSelect: (service: string) => void;
 }) {
   const card = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false),
@@ -78,10 +77,11 @@ function ServiceCard({
           <br />
           {service.lines[1]}
         </h3>
-        <button
+        <a
           className="cargo-service-arrow"
-          aria-label={`Tanya layanan ${service.title}`}
-          onClick={() => onSelect(service.title)}
+          aria-label={`Tanya layanan ${service.title} lewat WhatsApp`}
+          href={whatsappChat(service.title)}
+          {...EXTERNAL}
         >
           <svg
             viewBox="0 0 24 24"
@@ -98,16 +98,12 @@ function ServiceCard({
               strokeLinejoin="round"
             />
           </svg>
-        </button>
+        </a>
       </div>
     </article>
   );
 }
-export default function Services({
-  onSelect,
-}: {
-  onSelect: (service: string) => void;
-}) {
+export default function Services() {
   const [active, setActive] = useState(false);
   useEffect(() => {
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -141,7 +137,6 @@ export default function Services({
               service={service}
               index={index}
               active={active}
-              onSelect={onSelect}
             />
           ))}
         </div>

@@ -1,13 +1,14 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
+import { EXTERNAL, whatsappChat } from "@/lib/site";
 import { WhatsAppIcon } from "./icons";
 import { useLazyScene } from "./use-lazy-scene";
 
 const ContactScene = dynamic(() => import("./ContactScene"), { ssr: false });
 
 /** Closing call to action: a red panel with the copy beside a parked truck. */
-export default function Contact({ onContact }: { onContact: () => void }) {
+export default function Contact() {
   const stage = useRef<HTMLDivElement>(null);
   const { loaded, running } = useLazyScene(stage);
   return (
@@ -28,10 +29,10 @@ export default function Contact({ onContact }: { onContact: () => void }) {
             Ceritakan barang, asal, dan tujuannya. Tim kami bantu pilih jalur
             dan jadwal yang paling pas, lalu mengawal kiriman Anda sampai tiba.
           </p>
-          <button className="button outline" onClick={onContact}>
+          <a className="button outline" href={whatsappChat()} {...EXTERNAL}>
             Hubungi kami
             <WhatsAppIcon />
-          </button>
+          </a>
         </div>
         <div
           className="contact-scene"

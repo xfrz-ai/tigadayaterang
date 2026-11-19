@@ -338,7 +338,7 @@ const reasons: Reason[] = [
   },
 ];
 
-export default function WhyUs({ onStart }: { onStart: () => void }) {
+export default function WhyUs() {
   return (
     <section
       className="why section"
@@ -357,24 +357,6 @@ export default function WhyUs({ onStart }: { onStart: () => void }) {
           lewat jadwal yang jelas, penanganan yang teliti, dan tim yang selalu
           bisa dihubungi.
         </p>
-        <button className="button outline" onClick={onStart}>
-          Mulai kirim sekarang
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M6 18 18 6M6 6h12v12"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
       </div>
       <ul className="why-list">
         {reasons.map((reason) => (

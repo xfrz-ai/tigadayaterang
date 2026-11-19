@@ -9,7 +9,7 @@ import { WhatsAppIcon } from "@/components/icons";
 import Services from "@/components/Services";
 import Testimonials from "@/components/Testimonials";
 import WhyUs from "@/components/WhyUs";
-import { services } from "@/components/service-data";
+import { EXTERNAL, whatsappChat } from "@/lib/site";
 import { useCallback, useEffect, useRef, useState } from "react";
 const LogisticsScene = dynamic(() => import("@/components/LogisticsScene"), {
   ssr: false,
@@ -34,15 +34,9 @@ function Arrow() {
   );
 }
 export default function Home() {
-  const [selectedService, setSelectedService] = useState(
-    "Angkutan barang (freight)",
-  );
   const [menu, setMenu] = useState(false),
     [paused, setPaused] = useState(false),
-    [ready, setReady] = useState(false),
-    [submitted, setSubmitted] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const form = useRef<HTMLFormElement>(null);
+    [ready, setReady] = useState(false);
   const sceneRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
   const [hidden, setHidden] = useState(false);
@@ -73,11 +67,7 @@ export default function Home() {
       document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
-  function openQuote() {
-    setSubmitted(false);
-    dialog.current?.showModal();
-    setMenu(false);
-  }
+  const chatUrl = whatsappChat();
   return (
     <main>
       <section className="hero" id="home">
@@ -90,10 +80,10 @@ export default function Home() {
               </a>
             ))}
           </nav>
-          <button className="header-cta" onClick={openQuote}>
+          <a className="header-cta" href={chatUrl} {...EXTERNAL}>
             <span className="header-cta-label">Hubungi kami</span>
             <WhatsAppIcon />
-          </button>
+          </a>
           <button
             className="menu-toggle"
             aria-label="Buka menu"
@@ -116,19 +106,20 @@ export default function Home() {
             <span className="red-dot" /> JASA LOGISTIK DARAT · LAUT · UDARA
           </div>
           <h1>
-            Barang tiba.
+            Kirim aman.
             <br />
-            <span>Bisnis melaju.</span>
+            <span>Tarif bersahabat.</span>
           </h1>
           <p>
-            Ambisi besar butuh logistik yang mulus.
-            <br className="desktop-break" /> Kami urus perjalanannya, Anda fokus
-            melangkah.
+            Dari paket kecil sampai muatan palet, kami antar barang Anda dengan
+            teliti dan tepat waktu,
+            <br className="desktop-break" /> ke seluruh Jabodetabek hingga
+            mancanegara. Harga jelas sejak awal.
           </p>
           <div className="hero-actions">
-            <button className="button primary" onClick={openQuote}>
-              Mulai kirim barang <Arrow />
-            </button>
+            <a className="button primary" href={chatUrl} {...EXTERNAL}>
+              Cek tarif sekarang <Arrow />
+            </a>
             <a className="watch-button" href="#services">
               <span className="play-icon">
                 <svg viewBox="0 0 12 12" aria-hidden="true">
@@ -181,14 +172,9 @@ export default function Home() {
           </button>
         </div>
       </section>
-      <Services
-        onSelect={(service) => {
-          setSelectedService(service);
-          openQuote();
-        }}
-      />
-      <About onContact={openQuote} />
-      <WhyUs onStart={openQuote} />
+      <Services />
+      <About />
+      <WhyUs />
       <Testimonials />
       <section className="process section" id="how-it-works">
         <div className="process-intro">
@@ -204,9 +190,9 @@ export default function Home() {
             Logistik yang baik seharusnya terasa ringan. Kami jaga setiap
             bagiannya tetap terhubung, dan Anda selalu tahu perkembangannya.
           </p>
-          <button className="button primary" onClick={openQuote}>
+          <a className="button primary" href={chatUrl} {...EXTERNAL}>
             Rencanakan pengiriman <Arrow />
-          </button>
+          </a>
         </div>
         <ol className="steps">
           <li>
@@ -241,148 +227,9 @@ export default function Home() {
           </li>
         </ol>
       </section>
-      <Contact onContact={openQuote} />
-      <Footer onQuote={openQuote} />
+      <Contact />
+      <Footer />
       <MenuDrawer open={menu} onClose={() => setMenu(false)} />
-      <dialog
-        ref={dialog}
-        aria-label="Buat ringkasan pengiriman"
-        className="quote-dialog"
-        onClick={(e) => {
-          if (e.target === dialog.current) dialog.current.close();
-        }}
-      >
-        <button
-          className="dialog-close"
-          aria-label="Tutup formulir"
-          onClick={() => dialog.current?.close()}
-        >
-          ×
-        </button>
-        {submitted ? (
-          <div className="success-message">
-            <span className="success-icon">↗</span>
-            <span className="eyebrow">LANGKAH BERIKUTNYA SUDAH SIAP</span>
-            <h2>
-              Siap kita
-              <br />
-              berangkatkan.
-            </h2>
-            <p>
-              Ringkasan pengiriman Anda sudah diunduh. Formulir ini belum
-              mengirimkan data ke tim kami.
-            </p>
-            <button
-              className="button primary"
-              onClick={() => dialog.current?.close()}
-            >
-              Kembali ke halaman <Arrow />
-            </button>
-          </div>
-        ) : (
-          <>
-            <span className="eyebrow">RENCANA BESAR DIMULAI DI SINI</span>
-            <h2>
-              Mau kirim
-              <br />
-              ke mana?
-            </h2>
-            <p>
-              Buat ringkasan singkat pengiriman Anda sebagai bahan diskusi
-              logistik berikutnya.
-            </p>
-            <form
-              ref={form}
-              onSubmit={(e) => {
-                e.preventDefault();
-                const data = new FormData(e.currentTarget);
-                const brief = `3 DAYA TERANG — RINGKASAN PENGIRIMAN\n\nNama: ${data.get("name")}\nEmail: ${data.get("email")}\nLayanan: ${data.get("service")}\nAsal: ${data.get("origin")}\nTujuan: ${data.get("destination")}\nDetail: ${data.get("details")}\n\nDibuat di perangkat Anda. Belum ada permintaan yang terkirim.\n`;
-                const url = URL.createObjectURL(
-                  new Blob([brief], { type: "text/plain" }),
-                );
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "3-daya-terang-ringkasan-pengiriman.txt";
-                a.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                setSubmitted(true);
-              }}
-            >
-              <div className="form-row">
-                <label>
-                  Nama Anda
-                  <input
-                    name="name"
-                    autoComplete="name"
-                    placeholder="Budi Santoso"
-                    required
-                  />
-                </label>
-                <label>
-                  Email kantor
-                  <input
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="budi@perusahaan.co.id"
-                    required
-                  />
-                </label>
-              </div>
-              <label>
-                Layanan yang dibutuhkan
-                <select
-                  name="service"
-                  value={selectedService}
-                  onChange={(e) => setSelectedService(e.target.value)}
-                >
-                  {services.map((s) => (
-                    <option key={s.kind}>{s.title}</option>
-                  ))}
-                  <option>Angkutan barang (freight)</option>
-                  <option>Pergudangan &amp; fulfillment</option>
-                  <option>Pengantaran last-mile</option>
-                  <option>Solusi logistik terpadu</option>
-                </select>
-              </label>
-              <div className="form-row">
-                <label>
-                  Dikirim dari
-                  <input
-                    name="origin"
-                    placeholder="Kota atau wilayah"
-                    required
-                  />
-                </label>
-                <label>
-                  Tujuan pengiriman
-                  <input
-                    name="destination"
-                    placeholder="Kota atau wilayah"
-                    required
-                  />
-                </label>
-              </div>
-              <label>
-                Ceritakan sedikit tentang kiriman Anda
-                <textarea
-                  name="details"
-                  rows={3}
-                  placeholder="Barang apa, berapa banyak, dan kapan?"
-                  required
-                />
-              </label>
-              <button className="button primary" type="submit">
-                Buat ringkasan pengiriman <Arrow />
-              </button>
-              <small>
-                Ringkasan diunduh ke perangkat Anda. Data tidak dikirim ke mana
-                pun.
-              </small>
-            </form>
-          </>
-        )}
-      </dialog>
     </main>
   );
 }
