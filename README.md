@@ -1,4 +1,4 @@
-# 3 Daya Terang — Barang tiba. Bisnis melaju.
+# 3 Daya Terang — Kirim aman. Tarif bersahabat.
 
 The landing page for 3 Daya Terang (https://3dayaterang.id). All visitor-facing copy is in Indonesian. A responsive logistics landing page in Next.js, React Three Fiber, and Three.js. All hero objects are procedural geometry rendered live in WebGL; no models, hero images, or video assets are used.
 
@@ -45,6 +45,18 @@ Each card loads as it approaches the viewport, runs independently while visible,
 
 Run `node scripts/verify-services.mjs` against the dev server (or set `VERIFY_URL`) to check animation, hover, service selection, responsive columns, offscreen pausing, reduced motion, and preservation of the original hero.
 
+## Load simulator (Simulasi muat)
+
+`components/LoadSimulator.tsx` sits directly below the services: a 3D stage on the left and a form on the right. The visitor picks small goods (a blind van, 2,2 × 1,4 × 1,2 m) or large goods (a box truck, 3,8 × 1,8 × 2,0 m). The vehicle drives into the bay and lifts its near side and roof like a wing box. Boxes added from the form (small parcel, medium and large carton, euro pallet) pop up on the loading pad and are lifted into place one by one. Boxes that do not fit stay on the pad, which then reads "TIDAK MUAT", and the panel offers the truck. Switching vehicles unloads the boxes onto the pad, sends the first vehicle away, and loads the next one. When a truck load would fit in the van, the panel suggests the van. The "Pesan … ini" button opens WhatsApp with the vehicle, fill level and box list already written.
+
+- `load-sim-data.ts`: vehicle and box sizes in 10 cm cells, the packing, and the WhatsApp message. Boxes are packed in the order they were added on a height map of the floor: each takes the first spot from the back of the cargo space forwards, upright, turned either way, with at least 70% of its base supported. Adding a box never moves the others. If something is left over, the packing is tried again biggest first and kept when it fits more. It counts space only, not weight.
+- `load-sim-model.ts`: the van and truck (the truck reuses the shared chassis and cab), the yard, and the boxes. Each box kind is one instanced mesh per colour, and the ink outlines of every box are one line buffer that is rewritten while boxes move, so 150 boxes cost a handful of draw calls.
+- `LoadSimScene.tsx`: frames the truck with its wing up and the pad, works out where off screen begins for the drive in and out, and renders on demand, only while something moves. With reduced motion every change jumps straight to its end.
+
+The simulator is desktop only. On phones and tablets (up to 1194px) and touch-first screens such as a 12.9-inch iPad in landscape, the section and its links in the header, menu panel and footer are hidden, and its 3D scene is never loaded.
+
+Run `node scripts/verify-simulator.mjs` to check placement and navigation, lazy loading, the van arriving and opening, packing and the meter, the left-over pallet and the switch to the truck, the WhatsApp message, removing and clearing, the fit at 1195–1920px, that it is hidden on phones, tablets and touch screens, offscreen pausing and reduced motion.
+
 ## About section (Tentang Kami)
 
 The company introduction for PT Tiga Daya Terang (based in Bekasi, serving Jabodetabek) sits between the services and how-it-works sections. `components/About.tsx` holds the copy and layout. `AboutScene.tsx` frames the scene from the same isometric direction as the service cards, and `about-model.ts` builds it: an open-sided box truck with loaded pallets, a stack of parcels, and a worker who carries a box from the stack into the truck on an 8-second loop. The truck reuses the shared chassis and cab (`truckChassis` and `truckWheels` in `models.ts`).
@@ -87,7 +99,8 @@ Run `node scripts/verify-footer.mjs` to check the content and links, the structu
 
 - Site constants (domain, legal name, location, service area, title, description, keywords) are in `lib/site.ts`. Change the domain there.
 - `app/layout.tsx` sets `lang="id"`, the title and description, canonical URL, Open Graph and X cards, robots directives, and JSON-LD (`Organization` with legal name, street address in Bekasi, office and WhatsApp numbers, Jabodetabek service area and the service catalogue, `WebSite`, `WebPage`).
-- Generated at build time: `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, the 1200×630 share image `/og.png`, and `/apple-touch-icon.png`. These use `dynamic = "force-static"` because the site is a static export.
+- Generated at build time: `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, and `/apple-touch-icon.png`. These use `dynamic = "force-static"` because the site is a static export.
+- The 1200×630 share image `public/og.png` is a capture of the hero (headline and 3D scene, without the nav, paragraph and buttons). After changing the hero, start the site and run `node scripts/make-og.mjs` (`OG_URL` sets another origin), then bump `?v=` on the image URL in `app/layout.tsx` so WhatsApp and Facebook fetch the new one.
 - After deploying, verify the domain in Google Search Console and submit `https://3dayaterang.id/sitemap.xml`.
 
 ## Deploy to Cloudflare Workers

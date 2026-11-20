@@ -939,6 +939,650 @@ h2 {
   }
 }
 
+/* Load simulator: pick a vehicle, add boxes, watch them packed in 3D
+   (components/LoadSimulator.tsx). */
+.loadsim {
+  padding: 104px 0 96px;
+  scroll-margin-top: 0;
+}
+.loadsim-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 64px;
+}
+.loadsim-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 40px;
+  margin-bottom: 44px;
+}
+.loadsim-head .eyebrow {
+  color: var(--red);
+  font-size: 9px;
+  letter-spacing: 1.65px;
+}
+.loadsim-head h2 {
+  font-size: clamp(40px, 4.2vw, 62px);
+  line-height: 1.1;
+  font-weight: 550;
+  letter-spacing: -2.5px;
+  margin: 21px 0 0;
+}
+.loadsim-head h2 span {
+  color: var(--red);
+}
+.loadsim-head p {
+  max-width: 390px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #575c56;
+  margin: 0 0 8px;
+}
+.loadsim-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+/* The stage stays in view while the panel is used. */
+.loadsim-stage {
+  position: sticky;
+  top: 24px;
+  z-index: 3;
+  aspect-ratio: 1.08 / 1;
+  max-height: calc(100svh - 48px);
+  background: var(--white);
+  border: 1px solid var(--ink);
+  overflow: hidden;
+  isolation: isolate;
+}
+.loadsim-scene {
+  position: absolute;
+  inset: 0;
+}
+.loadsim-scene > div {
+  position: absolute !important;
+  inset: 0;
+}
+.loadsim-scene canvas {
+  display: block;
+  touch-action: pan-y !important;
+}
+.loadsim-fallback {
+  position: absolute;
+  inset: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--muted);
+}
+.loadsim-hud {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+.loadsim-tag {
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.loadsim-gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.loadsim-gauge-bar {
+  width: 64px;
+  height: 7px;
+  border: 1px solid var(--ink);
+  background: var(--white);
+}
+.loadsim-gauge-bar span,
+.loadsim-bar span {
+  display: block;
+  height: 100%;
+  background: var(--red);
+  transition: width 0.5s;
+}
+.loadsim-status {
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  z-index: 2;
+  max-width: calc(100% - 40px);
+  margin: 0;
+  padding: 5px 10px 5px 0;
+  background: rgba(255, 253, 248, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 550;
+  pointer-events: none;
+}
+.loadsim-status > span {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.loadsim-status.is-busy > span {
+  background: var(--red);
+  animation: pulse 1s infinite;
+}
+.loadsim-panel {
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--ink);
+  padding: 26px 26px 24px;
+}
+.loadsim-panel form {
+  margin: 0;
+}
+.loadsim-step {
+  min-width: 0;
+  margin: 0 0 22px;
+  padding: 0 0 22px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+.loadsim-load {
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+.loadsim-legend {
+  padding: 0;
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.loadsim-legend span {
+  margin-right: 8px;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 1.4px;
+  color: var(--red);
+}
+.loadsim-vehicles,
+.loadsim-kinds {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.loadsim-vehicles {
+  gap: 12px;
+}
+/* Radio choices drawn as cards; the input stays focusable. */
+.loadsim-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  column-gap: 12px;
+  align-content: center;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+.loadsim-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+.loadsim-option-icon {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  height: 40px;
+}
+.loadsim-option-icon svg {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+.loadsim-option strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  align-self: end;
+}
+.loadsim-option small {
+  font-size: 11px;
+  color: var(--muted);
+  align-self: start;
+}
+.loadsim-vehicle {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 14px 16px 15px;
+}
+.loadsim-vehicle .loadsim-option-icon {
+  grid-row: auto;
+  justify-content: start;
+  height: 52px;
+  margin-bottom: 10px;
+}
+.loadsim-vehicle strong {
+  font-size: 15px;
+}
+.loadsim-option:hover {
+  border-color: var(--ink);
+}
+.loadsim-option:has(input:checked) {
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+.loadsim-option:has(input:checked)::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.loadsim-option:has(input:focus-visible) {
+  outline: 3px solid var(--red);
+  outline-offset: 3px;
+}
+.loadsim-step:disabled .loadsim-kinds,
+.loadsim-step:disabled .loadsim-add {
+  opacity: 0.45;
+}
+.loadsim-step:disabled .loadsim-option {
+  cursor: default;
+  border-color: var(--line);
+}
+.loadsim-add {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+.loadsim-quantity {
+  display: flex;
+  border: 1px solid var(--ink);
+  background: var(--white);
+}
+.loadsim-quantity button {
+  width: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 18px;
+}
+.loadsim-quantity button:hover:not(:disabled) {
+  color: var(--red);
+}
+.loadsim-quantity button:disabled {
+  color: var(--grey, #c9ccca);
+}
+.loadsim-quantity button:focus-visible,
+.loadsim-quantity input:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: -3px;
+}
+.loadsim-quantity input {
+  width: 46px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.loadsim-quantity input::-webkit-outer-spin-button,
+.loadsim-quantity input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.loadsim-submit {
+  flex: 1;
+  justify-content: space-between;
+  gap: 16px;
+}
+.loadsim-submit:disabled {
+  transform: none;
+}
+.loadsim-hint {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.loadsim-meter-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--muted);
+}
+.loadsim-meter-top strong {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  color: var(--ink);
+}
+.loadsim-bar {
+  height: 10px;
+  margin: 8px 0;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+.loadsim-meter small {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.loadsim-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+.loadsim-list li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.loadsim-list li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.loadsim-list-name {
+  display: flex;
+  flex-direction: column;
+  font-weight: 550;
+}
+.loadsim-list-name small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.loadsim-list-name em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--red);
+}
+.loadsim-list b {
+  font-weight: 600;
+}
+.loadsim-list button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--white);
+  font-size: 15px;
+  line-height: 1;
+}
+.loadsim-list button:hover {
+  border-color: var(--ink);
+  color: var(--red);
+}
+.loadsim-swatch {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--ink);
+}
+.loadsim-swatch.is-parcel {
+  background: var(--red);
+}
+.loadsim-swatch.is-medium {
+  background: #e7e7e2;
+}
+.loadsim-swatch.is-large {
+  background: linear-gradient(90deg, var(--white) 40%, var(--red) 40% 60%, var(--white) 60%);
+}
+.loadsim-swatch.is-pallet {
+  background: linear-gradient(var(--white) 70%, #c9ccca 70%);
+}
+.loadsim-meter + .loadsim-empty {
+  margin-top: 14px;
+}
+.loadsim-empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.loadsim-alert,
+.loadsim-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--red);
+  background: #fdeeec;
+}
+.loadsim-tip {
+  border-color: var(--line);
+  background: var(--paper);
+}
+.loadsim-alert p,
+.loadsim-tip p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.loadsim-alert strong {
+  color: var(--red);
+}
+.loadsim-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border: 1px solid var(--ink);
+  background: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.loadsim-switch:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.loadsim-switch:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.loadsim-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+}
+.loadsim-actions .button {
+  flex: 1;
+  justify-content: space-between;
+  gap: 16px;
+}
+.loadsim-clear {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.loadsim-clear:hover:not(:disabled) {
+  color: var(--red);
+}
+.loadsim-clear:disabled {
+  color: #b4b8b1;
+}
+.loadsim-note {
+  margin: 14px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+@media (min-width: 1700px) {
+  .loadsim-inner {
+    max-width: 1640px;
+  }
+}
+@media (max-width: 1100px) {
+  .loadsim-inner {
+    padding: 0 35px;
+  }
+  .loadsim-body {
+    grid-template-columns: minmax(0, 1.25fr) minmax(330px, 1fr);
+    gap: 20px;
+  }
+  .loadsim-panel {
+    padding: 22px 20px 20px;
+  }
+}
+@media (max-width: 1000px) {
+  .loadsim {
+    padding: 80px 0 70px;
+  }
+  .loadsim-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 34px;
+  }
+  .loadsim-head h2 {
+    font-size: 49px;
+  }
+  .loadsim-head p {
+    max-width: 560px;
+  }
+  .loadsim-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  /* Below the fixed header, with a strip of page colour above it so the
+     panel never shows between the two while it scrolls underneath. */
+  .loadsim-stage {
+    top: 84px;
+    aspect-ratio: 1.6 / 1;
+    /* Leave room for the form, even on a phone held sideways. */
+    max-height: 52svh;
+    box-shadow: 0 -12px 0 var(--paper);
+  }
+}
+@media (max-width: 1000px) {
+  /* Keyboard focus scrolls form controls clear of the sticky stage. */
+  .loadsim-panel :is(input, button, a) {
+    scroll-margin-top: 60svh;
+  }
+}
+@media (max-width: 700px) {
+  .loadsim-stage {
+    top: 72px;
+    aspect-ratio: 1.2 / 1;
+    box-shadow: 0 -8px 0 var(--paper);
+  }
+}
+@media (max-width: 600px) {
+  .loadsim {
+    padding: 58px 0 54px;
+  }
+  .loadsim-inner {
+    padding: 0 24px;
+  }
+  .loadsim-head .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1.35px;
+  }
+  .loadsim-head h2 {
+    font-size: 38px;
+    line-height: 1.13;
+    letter-spacing: -1.65px;
+    margin-top: 20px;
+  }
+  .loadsim-head p {
+    font-size: 13px;
+  }
+  .loadsim-panel {
+    padding: 20px 16px 18px;
+  }
+  .loadsim-hud {
+    top: 14px;
+    left: 14px;
+    right: 14px;
+  }
+  .loadsim-status {
+    left: 14px;
+    bottom: 10px;
+    max-width: calc(100% - 28px);
+    font-size: 11.5px;
+  }
+  .loadsim-kind {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .loadsim-kind .loadsim-option-icon {
+    grid-row: auto;
+    justify-content: start;
+    height: 34px;
+    margin-bottom: 8px;
+  }
+  .loadsim-vehicle {
+    padding: 12px;
+  }
+  .loadsim-vehicle .loadsim-option-icon {
+    height: 40px;
+  }
+  .loadsim-vehicle strong {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1000px) and (max-height: 560px) {
+  /* Too short to share the screen: the stage scrolls with the page. */
+  .loadsim-stage {
+    position: relative;
+    top: auto;
+    max-height: 80svh;
+    box-shadow: none;
+  }
+  .loadsim-panel :is(input, button, a) {
+    scroll-margin-top: 80px;
+  }
+}
+
 /* About: company introduction beside the open-truck scene. */
 .company {
   padding: 112px 0 90px;
@@ -2211,5 +2855,17 @@ h2 {
   .drawer nav a {
     font-size: 22px;
     padding: 18px 0;
+  }
+}
+
+/* The load simulator is a desktop feature. Phones and tablets (up to 1194px)
+   and touch-first screens (a 12.9-inch iPad in landscape) do not get it, nor
+   the links to it in the header, menu panel and footer. Hidden, its stage
+   never nears the viewport, so the 3D scene is never loaded either. */
+@media (max-width: 1194px), (hover: none) and (pointer: coarse) {
+  .loadsim,
+  .nav a[href="#simulasi"],
+  li:has(> a[href="#simulasi"]) {
+    display: none;
   }
 }

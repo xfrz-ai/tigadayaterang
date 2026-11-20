@@ -78,7 +78,7 @@ const roofAgainstHeading = () =>
 
 try {
   await page.goto(base, { waitUntil: "networkidle" });
-  // Order: hero, services, about, how it works.
+  // Order: hero, services, load simulator, about, how it works.
   assert.deepEqual(
     await page.evaluate(() =>
       [...document.querySelectorAll("main > section")].map((s) => s.id),
@@ -86,6 +86,7 @@ try {
     [
       "home",
       "services",
+      "simulasi",
       "tentang-kami",
       "kenapa-kami",
       "testimoni",
@@ -102,6 +103,7 @@ try {
       ),
     [
       ["Layanan", "#services"],
+      ["Simulasi", "#simulasi"],
       ["Tentang kami", "#tentang-kami"],
       ["Testimoni", "#testimoni"],
       ["Cara kerja", "#how-it-works"],

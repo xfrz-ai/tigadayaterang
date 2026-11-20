@@ -257,7 +257,7 @@ export function pallet(x = 0, z = 0, levels = 2, red = false) {
   group.position.set(x, 0, z);
   return group;
 }
-function wheel(radius = 0.46) {
+export function wheel(radius = 0.46) {
   const m = new Model();
   m.cylinder(radius, 0.24, [0, 0, 0], C.dark, [Math.PI / 2, 0, 0], 20);
   for (const side of [-1, 1]) {

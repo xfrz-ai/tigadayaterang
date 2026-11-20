@@ -11,6 +11,7 @@ import { SocialIcon } from "./icons";
 
 export const NAV_LINKS = [
   ["Layanan", "#services"],
+  ["Simulasi", "#simulasi"],
   ["Tentang kami", "#tentang-kami"],
   ["Testimoni", "#testimoni"],
   ["Cara kerja", "#how-it-works"],

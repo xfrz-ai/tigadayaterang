@@ -2,7 +2,7 @@
 export const SITE_URL = "https://3dayaterang.id";
 export const SITE_NAME = "3 Daya Terang";
 export const SITE_LEGAL_NAME = "PT Tiga Daya Terang";
-export const SITE_TAGLINE = "Barang tiba. Bisnis melaju.";
+export const SITE_TAGLINE = "Kirim aman. Tarif bersahabat.";
 export const SITE_TITLE =
   "3 Daya Terang | Jasa Ekspedisi & Logistik Bekasi–Jabodetabek";
 export const SITE_DESCRIPTION =
@@ -85,6 +85,10 @@ export function whatsappChat(service?: string) {
     "",
     "Terima kasih.",
   ].join("\n");
+  return whatsappText(message);
+}
+/** WhatsApp chat link with any opening message already typed in. */
+export function whatsappText(message: string) {
   return `${WHATSAPP.href}?text=${encodeURIComponent(message)}`;
 }
 /** Props for links that open WhatsApp in a new tab. */

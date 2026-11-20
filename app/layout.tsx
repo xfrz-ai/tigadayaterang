@@ -22,14 +22,15 @@ import {
 import "./globals.css";
 
 const SHARE_IMAGE = {
-  url: "/og.png",
+  // Bump ?v= when public/og.png changes so WhatsApp and Facebook refetch it.
+  url: "/og.png?v=2",
   width: 1200,
   height: 630,
   type: "image/png",
-  alt: "3 Daya Terang — Barang tiba. Bisnis melaju. Jasa logistik darat, laut, dan udara.",
+  alt: "3 Daya Terang — Kirim aman. Tarif bersahabat. Jasa logistik darat, laut, dan udara.",
 };
 const SHARE_DESCRIPTION =
-  "Jasa pengiriman barang, logistik, dan ekspedisi dari Bekasi untuk Jabodetabek. Kami urus perjalanannya, Anda fokus melangkah.";
+  "Dari paket kecil sampai muatan palet, kami antar barang Anda dengan teliti dan tepat waktu ke seluruh Jabodetabek hingga mancanegara. Harga jelas sejak awal.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

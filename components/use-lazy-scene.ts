@@ -3,12 +3,14 @@ import { type RefObject, useEffect, useState } from "react";
 
 /**
  * Loads a WebGL scene once its stage comes near the viewport, and says when it
- * may animate: on screen, tab visible and reduced motion off.
+ * may animate: on screen, tab visible and reduced motion off. `reduced` is
+ * there for interactive scenes, which still have to show what changed.
  */
 export function useLazyScene(stage: RefObject<HTMLElement | null>) {
   const [loaded, setLoaded] = useState(false),
     [visible, setVisible] = useState(false),
-    [active, setActive] = useState(false);
+    [active, setActive] = useState(false),
+    [reduced, setReduced] = useState(false);
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
@@ -28,7 +30,10 @@ export function useLazyScene(stage: RefObject<HTMLElement | null>) {
     preload.observe(el);
     observer.observe(el);
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setActive(!document.hidden && !motion.matches);
+    const sync = () => {
+      setActive(!document.hidden && !motion.matches);
+      setReduced(motion.matches);
+    };
     sync();
     motion.addEventListener("change", sync);
     document.addEventListener("visibilitychange", sync);
@@ -39,5 +44,5 @@ export function useLazyScene(stage: RefObject<HTMLElement | null>) {
       document.removeEventListener("visibilitychange", sync);
     };
   }, [stage]);
-  return { loaded, running: active && visible };
+  return { loaded, running: active && visible, reduced };
 }

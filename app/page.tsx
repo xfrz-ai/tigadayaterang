@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import MenuDrawer, { NAV_LINKS } from "@/components/MenuDrawer";
 import Contact from "@/components/Contact";
 import { WhatsAppIcon } from "@/components/icons";
+import LoadSimulator from "@/components/LoadSimulator";
 import Services from "@/components/Services";
 import Testimonials from "@/components/Testimonials";
 import WhyUs from "@/components/WhyUs";
@@ -156,6 +157,7 @@ export default function Home() {
         </div>
       </section>
       <Services />
+      <LoadSimulator />
       <About />
       <WhyUs />
       <Testimonials />
