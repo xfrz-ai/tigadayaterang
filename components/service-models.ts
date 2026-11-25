@@ -1,11 +1,22 @@
 import * as THREE from "three";
-import { Model, C, batchStatic, cargo, label, truck } from "./models";
+import {
+  Model,
+  C,
+  batchStatic,
+  cargo,
+  label,
+  plan,
+  smooth,
+  truck,
+} from "./models";
 
 export type ServiceKind = "road" | "ocean" | "air" | "drone";
 export type ServiceModel = {
   root: THREE.Group;
-  /** Holds the vehicle; slid along +x (its heading) for the hover drive-through. */
+  /** Holds the vehicle, heading +x. */
   travel: THREE.Group;
+  /** The ground around the vehicle (lane, water, cargo), for a scene that brings its own. */
+  scenery: THREE.Object3D[];
   animate: (time: number, delta: number, speed: number) => void;
   focal: [number, number, number];
   span: number;
@@ -17,13 +28,6 @@ const shadowMaterial = new THREE.MeshBasicMaterial({
   opacity: 0.38,
   depthWrite: false,
 });
-const shellOutline = new THREE.ShaderMaterial({
-  side: THREE.BackSide,
-  uniforms: { thickness: { value: 0.015 } },
-  vertexShader:
-    "uniform float thickness; void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position+normal*thickness,1.0);}",
-  fragmentShader: "void main(){gl_FragColor=vec4(0.14,0.16,0.15,1.0);}",
-});
 function shadow(root: THREE.Group, width: number, depth: number, x = 0, z = 0) {
   const g = new THREE.CircleGeometry(1, 48);
   g.scale(width / 2, depth / 2, 1);
@@ -32,35 +36,6 @@ function shadow(root: THREE.Group, width: number, depth: number, x = 0, z = 0) {
   mesh.position.set(x, 0.015, z);
   root.add(mesh);
   return mesh;
-}
-function smooth(
-  m: Model,
-  geo: THREE.BufferGeometry,
-  color: string,
-  pos: number[],
-  rot: number[] = [0, 0, 0],
-) {
-  m.add(geo, color, pos, rot, false);
-  m.group.add(new THREE.Mesh(geo.clone(), shellOutline));
-}
-function plan(
-  m: Model,
-  points: number[][],
-  thickness: number,
-  y: number,
-  color: string,
-) {
-  const shape = new THREE.Shape();
-  points.forEach(([x, z], i) =>
-    i ? shape.lineTo(x, -z) : shape.moveTo(x, -z),
-  );
-  shape.closePath();
-  m.add(
-    new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false }),
-    color,
-    [0, y, 0],
-    [-Math.PI / 2, 0, 0],
-  );
 }
 function tube(
   m: Model,
@@ -228,12 +203,14 @@ function road(): ServiceModel {
     b.position.set(x, 0.03, z);
     decor.add(b);
   }
-  root.add(batchStatic(decor));
+  const scenery: THREE.Object3D[] = [batchStatic(decor)];
+  root.add(scenery[0]);
   const lane = new Model();
   lane.box([16, 0.025, 3.2], [0, -0.035, 0], "#edf0e9", [0, 0, 0], false);
   for (const z of [-1.64, 1.64])
     lane.box([16, 0.015, 0.035], [0, -0.01, z], C.grey, [0, 0, 0], false);
-  root.add(lane.finish());
+  scenery.push(lane.finish());
+  root.add(scenery[1]);
   const marks = new THREE.Group();
   for (let i = 0; i < 9; i++) {
     const m = new Model();
@@ -246,10 +223,12 @@ function road(): ServiceModel {
     );
     marks.add(m.finish());
   }
-  root.add(batchStatic(marks));
+  scenery.push(batchStatic(marks));
+  root.add(scenery[2]);
   return {
     root,
     travel,
+    scenery,
     focal: [0, 1.1, 0],
     span: 7.5,
     motion: () => vehicle.userData.wheels[0].rotation.z,
@@ -366,6 +345,7 @@ function ocean(): ServiceModel {
   water.rotation.x = -Math.PI / 2;
   water.scale.set(6.2, 2.75, 1);
   root.add(water);
+  const scenery: THREE.Object3D[] = [water];
   const waves: THREE.Group[] = [];
   for (let i = 0; i < 9; i++) {
     const w = new Model();
@@ -381,6 +361,7 @@ function ocean(): ServiceModel {
     const group = w.finish();
     root.add(group);
     waves.push(group);
+    scenery.push(group);
   }
   // A dolphin leaps alongside the ship (same heading), in the open water in
   // front of the hull so it reads clearly against the card.
@@ -428,6 +409,7 @@ function ocean(): ServiceModel {
   return {
     root,
     travel,
+    scenery,
     focal: [0, 1.5, 0],
     span: 10.6,
     motion: () => waves[0].position.x,
@@ -632,6 +614,7 @@ function airplane(): ServiceModel {
   return {
     root,
     travel,
+    scenery: [slips],
     focal: [0, 1.7, 0],
     span: 10.3,
     motion: () => jets[0].rotation.x,
@@ -714,6 +697,7 @@ function drone(): ServiceModel {
   return {
     root,
     travel,
+    scenery: [],
     focal: [0, 1.65, 0],
     span: 6.45,
     motion: () => rotors[0].rotation.y,

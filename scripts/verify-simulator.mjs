@@ -41,32 +41,35 @@ const settled = (page, vehicle, timeout = 15000) =>
     { timeout },
   );
 async function add(page, kind, count) {
-  await page.locator(".loadsim-kind", { hasText: kind }).click();
-  await page.getByLabel("Jumlah barang").fill(String(count));
-  await page.locator(".loadsim-submit").click();
+  const plus = page.getByRole("button", {
+    name: `Tambah ${kind.toLowerCase()}`,
+    exact: true,
+  });
+  const counter = page.getByLabel(`Jumlah ${kind.toLowerCase()}`);
+  const before = Number(await counter.innerText());
+  for (let i = 0; i < count; i++) await plus.click();
+  assert.equal(
+    await counter.innerText(),
+    String(before + count),
+    `${kind} counter goes up by ${count}`,
+  );
 }
-const chatText = async (page) =>
-  new URL(
-    await page.locator(".loadsim-actions a").getAttribute("href"),
-  ).searchParams.get("text");
 
 try {
   const page = await open();
   assert.deepEqual(
     await page.evaluate(() =>
       [...document.querySelectorAll("main > section")]
-        .slice(0, 3)
+        .slice(0, 4)
         .map((s) => s.id),
     ),
-    ["home", "services", "simulasi"],
+    ["home", "tentang-kami", "services", "simulasi"],
     "Simulator sits right below the services",
   );
+  // The link sits in the menu panel, which is closed (inert) until opened.
   assert.equal(
-    await page
-      .getByRole("navigation", { name: "Navigasi utama" })
-      .getByRole("link", { name: "Simulasi" })
-      .getAttribute("href"),
-    "#simulasi",
+    (await page.locator('#menu-drawer nav a[href="#simulasi"]').textContent()).trim(),
+    "Simulasi",
   );
   assert.equal(
     await page.locator(".loadsim-scene canvas").count(),
@@ -77,63 +80,77 @@ try {
   await show(page);
   let s = await sim(page);
   assert.equal(s.vehicle, null, "No vehicle before a choice");
-  assert(await page.locator(".loadsim-submit").isDisabled(), "Add waits for a vehicle");
+  assert(
+    await page.getByRole("button", { name: "Tambah palet", exact: true }).isDisabled(),
+    "Add waits for a vehicle",
+  );
 
-  // Small goods: the van drives in and opens.
-  await page.locator(".loadsim-vehicle", { hasText: "Barang kecil" }).click();
+  // Inter-island: the lane floods into a quay, then the ship sails in, ties
+  // up and drops its side.
+  await page.locator(".loadsim-vehicle", { hasText: "Antar pulau" }).click();
+  await page.waitForFunction(
+    () => {
+      const s = window.__relaySim;
+      return s?.phase === "away" && s.sea > 0 && s.sea < 1;
+    },
+    null,
+    { polling: 16 },
+  );
   await page.waitForFunction(() => window.__relaySim?.phase === "arriving");
   const arriving = await sim(page);
-  assert(arriving.x < 0, "Van drives in from behind");
-  await settled(page, "van");
+  assert.equal(arriving.sea, 1, "Lane flooded before the ship comes in");
+  assert(arriving.x < 0, "Ship sails in from behind");
+  await settled(page, "ship");
   s = await sim(page);
-  assert.equal(s.x, 0, "Van parks in the bay");
-  assert.equal(s.wing, 1, "Van side is lifted");
+  assert.equal(s.x, 0, "Ship lies alongside the quay");
+  assert.equal(s.wing, 1, "Drop side is down");
   assert.deepEqual(s.camera, arriving.camera, "Camera stays fixed");
+  assert.equal(
+    await page.locator(".loadsim-tag").innerText(),
+    "KAPAL KARGO / 4,8 × 2,2 × 1,6 M",
+  );
 
   await add(page, "Kardus sedang", 6);
   await page.waitForFunction(() => window.__relaySim?.moving > 0);
-  await settled(page, "van");
+  await settled(page, "ship");
   s = await sim(page);
-  assert.equal(s.inside, 6, "Six boxes packed inside the van");
+  assert.equal(s.inside, 6, "Six boxes on deck");
   assert.equal(
     await page.locator(".loadsim-meter-top strong").innerText(),
-    "13%",
-    "0,48 of 3,7 m³ in use",
+    "3%",
+    "0,48 of 16,9 m³ in use",
   );
-
-  // A pallet is taller than the van: it waits on the pad and the truck is offered.
   await add(page, "Palet", 1);
-  await settled(page, "van");
-  s = await sim(page);
-  assert.equal(s.inside, 6);
-  assert.equal(s.onPad, 1, "Pallet left on the pad");
-  const alert = page.locator(".loadsim-alert");
-  assert.match(await alert.innerText(), /1 barang tidak muat di van/);
-  assert.match(await chatText(page), /Catatan: 1 barang belum muat di van\./);
+  await settled(page, "ship");
+  assert.equal((await sim(page)).inside, 7, "A pallet fits on deck");
 
-  await alert.getByRole("button", { name: "Ganti ke truk" }).click();
+  // To the truck: the load goes back to the quay, the ship sails off, the
+  // water drains and the truck takes everything.
+  await page.locator(".loadsim-vehicle", { hasText: "Barang besar" }).click();
   await page.waitForFunction(() => window.__relaySim?.phase === "unloading");
-  await settled(page, "truck", 20000);
+  await settled(page, "truck", 25000);
   s = await sim(page);
+  assert.equal(s.sea, 0, "Water drained for the truck");
+  assert.equal(s.runway, 0, "Plain road for the truck");
   assert.equal(s.inside, 7, "Everything packed into the truck");
   assert.equal(s.onPad, 0);
-  assert.equal(await alert.count(), 0, "Nothing left over");
-  const text = await chatText(page);
-  for (const line of [
-    "Armada: Truk (truk box), terisi ±",
-    "- Kardus sedang (50 × 40 × 40 cm) × 6",
-    "- Palet (120 × 80 × 130 cm) × 1",
-  ])
-    assert(text.includes(line), `WhatsApp message has "${line}"`);
 
-  // Without the pallet the van would do, and the panel says so.
+  // More pallets than the truck takes: they wait on the pad and the panel
+  // offers a chat with the team.
+  await add(page, "Palet", 6);
+  await settled(page, "truck");
+  s = await sim(page);
+  assert(s.onPad > 0, "Left-over pallets wait on the pad");
+  const alert = page.locator(".loadsim-alert");
+  assert.match(await alert.innerText(), /barang tidak muat di truk/);
+  assert(
+    await alert.getByRole("link", { name: "Konsultasi armada" }).isVisible(),
+    "Offers a chat with the team",
+  );
   await page.getByRole("button", { name: "Kurangi satu palet" }).click();
   await settled(page, "truck");
-  assert.equal((await sim(page)).inside, 6, "Removed box leaves the truck");
-  assert(
-    await page.getByRole("button", { name: "Pakai van" }).isVisible(),
-    "Suggests the smaller vehicle",
-  );
+  s = await sim(page);
+  assert.equal(s.inside + s.onPad, 12, "Removed box leaves the load");
   await page.getByRole("button", { name: "Kosongkan" }).click();
   await settled(page, "truck");
   s = await sim(page);
@@ -161,7 +178,80 @@ try {
     );
   }
 
+  // Fast shipping: the camera pulls back on an empty stage, then the plane
+  // taxis in, opens its cargo door and takes pallets.
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await show(page);
+  await settled(page, "truck");
+  const close = await sim(page);
+  await page.locator(".loadsim-vehicle", { hasText: "Kirim cepat" }).click();
+  await page.waitForFunction(
+    () => window.__relaySim?.vehicle === "plane" && window.__relaySim.phase === "arriving",
+    null,
+    { timeout: 15000 },
+  );
+  const taxiing = await sim(page);
+  assert(taxiing.frame >= 0, "Camera reframes before the plane arrives");
+  assert.notEqual(taxiing.frame, close.frame, "The plane has its own framing");
+  assert(taxiing.zoom < close.zoom * 0.95, "Wider framing for the plane");
+  assert(taxiing.x < 0, "Plane taxis in from behind");
+  assert.equal(taxiing.runway, 1, "Lane paved into a runway before the plane comes in");
+  assert.equal(taxiing.sea, 0);
+  await settled(page, "plane", 20000);
+  s = await sim(page);
+  assert.equal(s.wing, 1, "Cargo door is up");
+  assert.deepEqual(s.camera, taxiing.camera, "Camera holds still while the plane moves");
+  await add(page, "Palet", 2);
+  await add(page, "Kardus besar", 4);
+  await settled(page, "plane");
+  s = await sim(page);
+  assert.equal(s.inside, 6, "Pallets and boxes packed in the hold");
+  assert.equal(
+    await page.locator(".loadsim-tag").innerText(),
+    "PESAWAT KARGO / 3,6 × 2,0 × 1,6 M",
+  );
+  for (const width of [1920, 1440, 1280, 1195]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await show(page);
+    await settled(page, "plane");
+    const fit = await page.evaluate(() => {
+      const c = document
+        .querySelector(".loadsim-scene canvas")
+        .getBoundingClientRect();
+      const [l, t, r, b] = window.__relaySim.parts.vehicle;
+      return l >= 0 && t >= 0 && r <= c.width && b <= c.height;
+    });
+    assert(fit, `${width}px: plane fits the stage`);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await show(page);
+  await page.getByRole("button", { name: "Kosongkan" }).click();
+  await page.locator(".loadsim-vehicle", { hasText: "Antar pulau" }).click();
+  await settled(page, "ship", 20000);
+  s = await sim(page);
+  assert.equal(s.frame, arriving.frame, "Back to the ship's framing");
+  assert.equal(s.sea, 1, "Lane flooded again");
+  assert.equal(s.runway, 0, "Runway gone under the water");
+  assert.deepEqual(
+    s.camera.map((v) => +v.toFixed(4)),
+    arriving.camera.map((v) => +v.toFixed(4)),
+    "Camera returns to where it was for the ship",
+  );
+  for (const width of [1920, 1440, 1280, 1195]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await show(page);
+    await settled(page, "ship");
+    const fit = await page.evaluate(() => {
+      const c = document
+        .querySelector(".loadsim-scene canvas")
+        .getBoundingClientRect();
+      const [l, t, r, b] = window.__relaySim.parts.vehicle;
+      return l >= 0 && t >= 0 && r <= c.width && b <= c.height;
+    });
+    assert(fit, `${width}px: ship fits the stage`);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   await page.locator("#home").scrollIntoViewIfNeeded();
   await page.waitForFunction(() => window.__relaySim?.running === false);
 
@@ -202,6 +292,29 @@ try {
     timeout: 1500,
   });
   assert.equal((await sim(still)).running, false, "Reduced motion honored");
+  await still.locator(".loadsim-vehicle", { hasText: "Antar pulau" }).click();
+  await settled(still, "ship", 1500);
+  assert.equal((await sim(still)).sea, 1, "Flooding jumps to the end too");
+  await still.locator(".loadsim-vehicle", { hasText: "Barang besar" }).click();
+  await settled(still, "truck", 1500);
+  assert.equal(
+    await still.locator(".loadsim-panel a").count(),
+    0,
+    "No WhatsApp link in the panel while everything fits",
+  );
+
+  // More than the truck holds: the alert links to WhatsApp with the load.
+  await add(still, "Palet", 7);
+  const consult = still.getByRole("link", { name: "Konsultasi armada" });
+  await consult.waitFor({ timeout: 1500 });
+  const text = new URL(await consult.getAttribute("href")).searchParams.get("text");
+  for (const line of [
+    "Armada: Truk (truk box), terisi ±",
+    "- Kardus besar (80 × 60 × 60 cm) × 3",
+    "- Palet (120 × 80 × 130 cm) × 7",
+    "belum muat di truk.",
+  ])
+    assert(text.includes(line), `WhatsApp message has "${line}"`);
 
   assert.deepEqual(errors, [], "No browser errors or missing assets");
   const report = {
@@ -209,12 +322,14 @@ try {
     checks: [
       "placement below services and navigation",
       "lazy loading and no vehicle before a choice",
-      "van drives in, parks and lifts its side; fixed camera",
-      "boxes packed inside and the meter",
-      "pallet left over, truck offered, load moved to the truck",
-      "WhatsApp message lists the load",
-      "removing, van suggestion and clearing",
+      "lane floods, ship sails in, ties up and drops its side; fixed camera",
+      "boxes and a pallet packed on deck, and the meter",
+      "load moved to the truck as the ship leaves and the water drains",
+      "left-over pallets on the pad, chat offered; removing and clearing",
+      "WhatsApp message lists the load when the truck is full",
       "truck fits the stage at 1195-1920px, no overflow",
+      "plane: lane becomes a runway, camera reframes, taxis in, door up, pallets packed, fits 1195-1920px",
+      "camera returns to the ship framing, lane floods again; ship fits 1195-1920px",
       "hidden with its links and scene on phones, tablets and touch screens",
       "pauses offscreen; reduced motion jumps to the end",
     ],

@@ -25,7 +25,7 @@ try {
   await page.addStyleTag({
     content: `
       .hero { height: ${H}px !important; min-height: 0 !important; }
-      .nav, .header-cta, .menu-toggle, .hero-copy > p, .hero-actions,
+      .nav, .header-cta, .menu-toggle, .hero-copy > p,
       nextjs-portal { display: none !important; }
       .header::after {
         content: "3dayaterang.id";
@@ -34,11 +34,7 @@ try {
         letter-spacing: 0.2px;
       }
       .hero-copy { margin-top: 18px !important; }
-      .hero-copy h1 {
-        font-size: 90px !important;
-        letter-spacing: -5px !important;
-        margin: 18px 0 0 !important;
-      }
+      .hero-copy h1 { font-size: 100px !important; }
       .scene { top: 335px !important; bottom: -60px !important; }
     `,
   });

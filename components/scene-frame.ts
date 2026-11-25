@@ -44,6 +44,41 @@ export function fitOrthographic(
   cam.updateMatrixWorld();
 }
 
+/**
+ * World positions of the vertices of an object's meshes, every `step`th one.
+ * Tighter than a world box for shapes that reach out diagonally.
+ */
+export function worldPoints(object: THREE.Object3D, step = 1) {
+  object.updateWorldMatrix(true, true);
+  const points: THREE.Vector3[] = [];
+  object.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const pos = o.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i += step)
+      points.push(
+        new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld),
+      );
+  });
+  return points;
+}
+
+/** Screen rectangle [left, top, right, bottom] of the points, in CSS pixels. */
+export function pointsRect(
+  points: THREE.Vector3[],
+  camera: THREE.Camera,
+  size: Size,
+) {
+  const r = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const p of points) {
+    const [x, y] = toCanvas(p, camera, size);
+    r[0] = Math.min(r[0], x);
+    r[1] = Math.min(r[1], y);
+    r[2] = Math.max(r[2], x);
+    r[3] = Math.max(r[3], y);
+  }
+  return r.map(Math.round);
+}
+
 /** Projects a world point to canvas CSS pixels. */
 export function toCanvas(p: THREE.Vector3, camera: THREE.Camera, size: Size) {
   const v = p.clone().project(camera);

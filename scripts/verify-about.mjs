@@ -2,231 +2,184 @@ import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 
-// Numeric checks only: no screenshots are taken.
+// Numeric and DOM checks only: no screenshots are taken.
 const browser = await chromium.launch({
   channel: "chrome",
   headless: true,
   args: ["--enable-webgl", "--ignore-gpu-blocklist"],
 });
-const page = await browser.newPage({
-  viewport: { width: 1440, height: 1000 },
-  deviceScaleFactor: 1.5,
-});
-const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
-page.on("response", (r) => {
-  if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`);
-});
 const base = process.env.VERIFY_URL || "http://localhost:3000";
+const errors = [];
 await mkdir("artifacts", { recursive: true });
-const state = () =>
-  page.evaluate(() => JSON.parse(JSON.stringify(window.__relayAbout)));
-const showAbout = async () => {
-  await page.locator("#tentang-kami").scrollIntoViewIfNeeded();
-  await page.waitForFunction(() => window.__relayAbout?.running);
-  await page.waitForTimeout(350);
-};
 
-/**
- * Where the truck roof meets the heading: for each rendered text run, how far
- * the roof rises above that run's baseline (in em; negative means below).
- */
-const roofAgainstHeading = () =>
+async function open(viewport, options = {}) {
+  const page = await browser.newPage({ viewport, ...options });
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  await page.goto(base, { waitUntil: "networkidle" });
+  return page;
+}
+const scrollTo = async (page, y) => {
+  await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
+  await page.waitForTimeout(400);
+};
+/** How far the ink has got, and the colours of the first and last letters. */
+const fill = (page) =>
   page.evaluate(() => {
-    const canvas = document
-      .querySelector(".company-scene canvas")
-      .getBoundingClientRect();
-    const roof = window.__relayAbout.roof.map(([x, y]) => [
-      canvas.left + x,
-      canvas.top + y,
-    ]);
-    const heading = document.querySelector("#company-heading");
-    const size = parseFloat(getComputedStyle(heading).fontSize);
-    const runs = [];
-    for (const node of heading.querySelectorAll(
-      ".company-line, .company-accent",
-    ))
-      for (const child of node.childNodes)
-        if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
-          const range = document.createRange();
-          range.selectNodeContents(child);
-          for (const b of range.getClientRects()) {
-            let top = Infinity;
-            for (let i = 0; i < 4; i++) {
-              const [x1, y1] = roof[i],
-                [x2, y2] = roof[(i + 1) % 4];
-              for (let k = 0; k <= 80; k++) {
-                const x = x1 + ((x2 - x1) * k) / 80;
-                if (x >= b.left && x <= b.right)
-                  top = Math.min(top, y1 + ((y2 - y1) * k) / 80);
-              }
-            }
-            // DM Sans ascent is 0.992em: the baseline sits that far below the box top.
-            const baseline = b.top + 0.992 * size;
-            runs.push({
-              text: child.textContent.trim(),
-              rise: Number.isFinite(top) ? (baseline - top) / size : null,
-            });
-          }
-        }
+    const p = document.querySelector(".about-statement");
+    const chars = p.querySelectorAll(".about-char");
+    const color = (el) => getComputedStyle(el).color;
+    const pin = document.querySelector(".about-pin").getBoundingClientRect();
     return {
-      runs,
-      headingBottom: heading.getBoundingClientRect().bottom,
-      roofTop: Math.min(...roof.map((p) => p[1])),
+      p: parseFloat(getComputedStyle(p).getPropertyValue("--p")),
+      letters: chars.length,
+      first: color(chars[0]),
+      last: color(chars[chars.length - 1]),
+      pinTop: pin.top,
+      pinHeight: pin.height,
     };
   });
+const INK = "color(srgb 0.141176 0.156863 0.152941)";
 
 try {
-  await page.goto(base, { waitUntil: "networkidle" });
-  // Order: hero, services, load simulator, about, how it works.
+  const page = await open({ width: 1440, height: 900 });
+  // Straight after the hero, before the services.
   assert.deepEqual(
     await page.evaluate(() =>
-      [...document.querySelectorAll("main > section")].map((s) => s.id),
+      [...document.querySelectorAll("main > section")].slice(0, 3).map((s) => s.id),
     ),
-    [
-      "home",
-      "services",
-      "simulasi",
-      "tentang-kami",
-      "kenapa-kami",
-      "testimoni",
-      "how-it-works",
-      "hubungi-kami",
-    ],
+    ["home", "tentang-kami", "services"],
+    "About sits between the hero and the services",
   );
-  assert.deepEqual(
-    await page
-      .getByRole("navigation", { name: "Navigasi utama" })
-      .getByRole("link")
-      .evaluateAll((links) =>
-        links.map((a) => [a.textContent.trim(), a.getAttribute("href")]),
-      ),
-    [
-      ["Layanan", "#services"],
-      ["Simulasi", "#simulasi"],
-      ["Tentang kami", "#tentang-kami"],
-      ["Testimoni", "#testimoni"],
-      ["Cara kerja", "#how-it-works"],
-    ],
+  assert.equal(
+    await page.locator("#tentang-kami h2").innerText(),
+    "TENTANG KAMI",
+    "Section label",
   );
-  assert.match(
-    await page.locator("#company-heading").innerText(),
-    /Menjadikan setiap\s+pengiriman lebih mudah\./,
+  // Readers get the statement once, as plain text.
+  const statement = await page.locator("#tentang-kami .sr-only").textContent();
+  assert.match(statement, /^Kami percaya setiap kiriman/);
+  assert.equal(
+    await page.locator(".about-statement [aria-hidden=true]").count(),
+    1,
+    "Letter spans hidden from readers",
   );
-  const copy = await page.locator(".company-copy").innerText();
-  for (const fact of ["PT Tiga Daya Terang", "Bekasi", "Jabodetabek"])
-    assert(copy.includes(fact), `About copy mentions ${fact}`);
-  const jsonLd = JSON.parse(
-    await page.locator('script[type="application/ld+json"]').innerHTML(),
+  assert(
+    await page.evaluate(() => document.documentElement.classList.contains("lenis")),
+    "Smooth scrolling is on",
   );
-  const org = jsonLd["@graph"].find((n) => n["@type"] === "Organization");
-  assert.equal(org.legalName, "PT Tiga Daya Terang");
-  assert.equal(org.address.addressLocality, "Bekasi");
-  assert(org.areaServed.some((a) => a.name === "Jabodetabek"));
 
-  await showAbout();
-  const before = await state();
-  await page.waitForTimeout(1200);
-  const after = await state();
-  assert(after.time > before.time, "About scene animates on its own");
-  assert.notEqual(after.workerX, before.workerX, "Worker walks");
-  assert.deepEqual(after.camera, before.camera, "Camera stays fixed");
-  assert(after.drawCalls < 120, "Static geometry is batched");
-  // Over one full loading round the worker both carries and sets down a box.
-  const carrying = await page.evaluate(
-    () =>
-      new Promise((done) => {
-        const seen = new Set(),
-          start = performance.now();
-        const tick = () => {
-          seen.add(window.__relayAbout.carrying);
-          if (performance.now() - start < 8300) requestAnimationFrame(tick);
-          else done([...seen]);
-        };
-        tick();
-      }),
-  );
-  assert.deepEqual(carrying.sort(), [false, true], "Box is loaded each round");
-
-  for (const width of [1920, 1440, 1100, 820, 700]) {
-    await page.setViewportSize({ width, height: 1000 });
-    await showAbout();
-    const { runs } = await roofAgainstHeading();
-    const under = runs.filter((r) => r.rise !== null);
-    assert(under.length > 0, `${width}px: roof sits under the heading`);
-    for (const r of under)
-      assert(
-        r.rise <= 0.05,
-        `${width}px: roof stays below the baseline of "${r.text}" (${r.rise.toFixed(2)}em)`,
-      );
-    assert(
-      under.some((r) => r.rise > -0.25),
-      `${width}px: roof tucks up to the second line`,
-    );
+  const { top, height } = await page.evaluate(() => {
+    const s = document.querySelector("#tentang-kami");
+    return { top: s.offsetTop, height: s.offsetHeight };
+  });
+  await scrollTo(page, top - 900);
+  const before = await fill(page);
+  assert.equal(before.p, 0, "Nothing inked before the section");
+  assert.notEqual(before.first, INK);
+  // Pinned: the statement stays on screen while the ink moves on.
+  const steps = [];
+  for (const f of [0.2, 0.5, 0.8]) {
+    await scrollTo(page, top + f * (height - 900));
+    steps.push(await fill(page));
   }
-  for (const width of [390, 320]) {
-    await page.setViewportSize({ width, height: 844 });
-    await showAbout();
-    const { headingBottom, roofTop } = await roofAgainstHeading();
-    assert(roofTop > headingBottom, `${width}px: no overlap with the heading`);
-  }
-  for (const width of [1440, 1024, 820, 390, 320]) {
-    await page.setViewportSize({ width, height: 900 });
-    await showAbout();
-    const fit = await page.evaluate(() => {
-      const s = document
-        .querySelector(".company-scene")
-        .getBoundingClientRect();
-      return Object.values(window.__relayAbout.parts).every(
-        ([l, t, r, b]) => l >= 0 && t >= 0 && r <= s.width && b <= s.height,
-      );
-    });
-    assert(fit, `${width}px: truck, parcels and worker stay inside the scene`);
-    assert(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-      `${width}px: no horizontal overflow`,
-    );
-  }
+  assert(
+    steps.every((s) => s.pinTop === 0 && s.pinHeight === 900),
+    "Statement pinned to the screen",
+  );
+  assert(
+    steps[0].p < steps[1].p && steps[1].p < steps[2].p,
+    "Ink advances with the scroll",
+  );
+  assert.equal(steps[1].first, INK, "Letters behind the front are ink");
+  assert.notEqual(steps[1].last, INK, "Letters ahead are still faded");
+  await scrollTo(page, top + height - 900);
+  const done = await fill(page);
+  assert.equal(done.last, INK, "Whole statement inked by the end");
 
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await showAbout();
-  await page.getByRole("button", { name: "Diskusikan kiriman Anda" }).click();
-  assert(await page.locator(".quote-dialog").isVisible(), "CTA opens the form");
-  await page.keyboard.press("Escape");
+  // A wheel turn glides instead of jumping.
+  await scrollTo(page, 0);
+  await page.mouse.move(700, 450);
+  await page.mouse.wheel(0, 600);
+  await page.waitForTimeout(80);
+  const gliding = await page.evaluate(() => scrollY);
+  await page.waitForTimeout(1500);
+  const settled = await page.evaluate(() => scrollY);
+  assert(gliding > 0 && gliding < settled, "Wheel scrolling is eased");
 
-  await page.locator("#home").scrollIntoViewIfNeeded();
-  await page.waitForTimeout(400);
-  const away = await state();
-  assert(!away.running, "Pauses when scrolled away");
-  await page.waitForTimeout(400);
-  assert.equal((await state()).time, away.time, "Clock stays frozen offscreen");
-  await showAbout();
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.waitForTimeout(250);
-  assert(!(await state()).running, "Reduced motion honored");
+  // The menu link glides to the section and lands at its top.
+  await scrollTo(page, 0);
+  await page.getByRole("button", { name: "Buka menu" }).click();
+  await page.waitForTimeout(600);
+  await page
+    .getByRole("navigation", { name: "Navigasi utama" })
+    .getByRole("link", { name: "Tentang kami" })
+    .click();
+  await page.waitForTimeout(150);
+  const midway = await page.evaluate(() => scrollY);
+  await page.waitForTimeout(1800);
+  const landed = await page.evaluate(() => ({
+    y: scrollY,
+    top: document.querySelector("#tentang-kami").getBoundingClientRect().top,
+    hash: location.hash,
+  }));
+  assert(midway > 0 && midway < landed.y, "Menu link glides");
+  assert(Math.abs(landed.top - 80) <= 2, "Lands below the fixed header");
+  assert.equal(landed.hash, "#tentang-kami");
+  await page.close();
 
-  assert.deepEqual(errors, [], "No browser errors or missing assets");
+  // Phones: still pinned, clear of the fixed header, no overflow.
+  const phone = await open({ width: 390, height: 844 });
+  const p = await phone.evaluate(() => {
+    const s = document.querySelector("#tentang-kami");
+    return { top: s.offsetTop, height: s.offsetHeight };
+  });
+  await scrollTo(phone, p.top + 0.5 * (p.height - 844));
+  const mobile = await phone.evaluate(() => {
+    const label = document.querySelector(".about-label").getBoundingClientRect();
+    const text = document.querySelector(".about-statement").getBoundingClientRect();
+    const header = document.querySelector(".header").getBoundingClientRect();
+    return {
+      clear: label.top >= header.bottom,
+      fits: text.bottom <= innerHeight,
+      overflow: document.documentElement.scrollWidth > innerWidth,
+    };
+  });
+  assert(mobile.clear && mobile.fits && !mobile.overflow, "390px: fits below the header");
+
+  await phone.close();
+
+  // Reduced motion: solid from the start, nothing pinned.
+  const still = await open({ width: 1440, height: 900 }, { reducedMotion: "reduce" });
+  await still.locator("#tentang-kami").scrollIntoViewIfNeeded();
+  const solid = await fill(still);
+  assert(solid.first === INK && solid.last === INK, "Reduced motion: solid text");
+
+  assert(
+    await still.evaluate(
+      () =>
+        getComputedStyle(document.querySelector(".about-pin")).position === "static" &&
+        document.querySelector("#tentang-kami").offsetHeight < innerHeight * 1.3,
+    ),
+    "Reduced motion: no pinned stretch",
+  );
+  await still.close();
+
+  assert.deepEqual(errors, [], "No browser errors");
   const report = {
     passed: true,
     checks: [
-      "section order and navigation",
-      "company copy and structured data",
-      "worker loading loop, fixed camera",
-      "roof tucks under the heading without covering letters",
-      "no heading overlap on phones",
-      "scene pieces fit at every width, no overflow",
-      "CTA opens the form",
-      "offscreen pause, reduced motion",
-      "no browser or network errors",
+      "about follows the hero; label and statement",
+      "statement read once by screen readers",
+      "pinned while the scroll inks it in, letter by letter",
+      "wheel scrolling and menu links glide (Lenis)",
+      "fits phones below the fixed header",
+      "reduced motion: solid, not pinned",
     ],
-    drawCalls: after.drawCalls,
   };
-  await writeFile(
-    "artifacts/about-verification.json",
-    JSON.stringify(report, null, 2),
-  );
+  await writeFile("artifacts/about-verification.json", JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
 } finally {
   await browser.close();

@@ -104,3 +104,18 @@ export const SOCIAL = [
   { name: "Threads", url: "https://www.threads.net/" },
   { name: "Instagram", url: "https://www.instagram.com/" },
 ] as const;
+/**
+ * Office hours in Jakarta time (WIB), by day of the week, Sunday first.
+ * `null` is a day off.
+ * TODO: placeholder hours. Replace them with the company's real hours.
+ */
+export const OPENING_HOURS: readonly (readonly [string, string] | null)[] = [
+  null,
+  ["08:00", "17:00"],
+  ["08:00", "17:00"],
+  ["08:00", "17:00"],
+  ["08:00", "17:00"],
+  ["08:00", "17:00"],
+  ["08:00", "14:00"],
+];
+export const TIME_ZONE = "Asia/Jakarta";

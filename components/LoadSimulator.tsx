@@ -1,14 +1,12 @@
 "use client";
 import dynamic from "next/dynamic";
-import { type FormEvent, useMemo, useRef, useState } from "react";
-import { EXTERNAL, whatsappChat } from "@/lib/site";
-import { WhatsAppIcon } from "./icons";
+import { useMemo, useRef, useState } from "react";
+import { EXTERNAL } from "@/lib/site";
 import { IsoDrawing, ISO, inkLine } from "./iso";
 import {
   ITEMS,
   ITEM_LIST,
   MAX_ITEMS,
-  MAX_QUANTITY,
   VEHICLES,
   VEHICLE_LIST,
   countKinds,
@@ -29,17 +27,126 @@ const LoadSimScene = dynamic(() => import("./LoadSimScene"), { ssr: false });
 
 const thin = { ...inkLine, strokeWidth: 1 } as const;
 
-/** Small isometric van or truck for the vehicle choices. */
-function vehicleIcon(kind: VehicleKind) {
-  const truck = kind === "truck";
-  const iso = new IsoDrawing().shadow(
-    truck ? -0.1 : -0.05,
-    0.1,
-    truck ? 1.75 : 1.35,
-    0.62,
+/** Small isometric cargo plane: high wing, one engine showing, red fin. */
+function planeIcon() {
+  const iso = new IsoDrawing().shadow(0, 0, 1.75, 0.8);
+  for (const x of [-0.45, 1.3])
+    iso.box([x, 0.04, -0.06], [0.22, 0.3, 0.12], ISO.dark);
+  iso.box([-1.65, 0.3, -0.32], [3.05, 0.66, 0.64], ISO.white, {
+    front: ([fw, fh]) => (
+      <>
+        <rect x={0} y={fh * 0.66} width={fw} height={fh * 0.1} fill={ISO.red} />
+        <rect x={fw * 0.42} y={fh * 0.12} width={fw * 0.36} height={fh * 0.5} fill="none" {...thin} />
+      </>
+    ),
+  });
+  iso.box([1.4, 0.36, -0.26], [0.3, 0.52, 0.52], ISO.white, {
+    side: ([sw, sh]) => (
+      <rect x={sw * 0.12} y={sh * 0.1} width={sw * 0.76} height={sh * 0.3} fill="#647474" {...thin} />
+    ),
+  });
+  iso.box([-0.25, 0.74, 0.74], [0.62, 0.22, 0.22], ISO.red);
+  iso.flat(
+    [
+      [0.4, 0.98, -1.75],
+      [0.4, 0.98, 1.75],
+      [-0.1, 0.98, 1.75],
+      [-0.35, 0.98, 0],
+      [-0.1, 0.98, -1.75],
+    ].map(([x, y, z]) => [x, y, z] as const),
+    ISO.wall,
   );
-  const [x0, len, h, w] = truck ? [-1.5, 2, 1.25, 0.9] : [-1.1, 1.45, 0.95, 0.8];
-  const cab: [number, number] = truck ? [0.75, 0.95] : [0.62, 0.8];
+  for (const [z0, z1] of [
+    [0.55, 1.15],
+    [1.15, 0.55],
+  ])
+    iso.path(
+      [
+        [0.4, 0.55, z0],
+        [0.4, 1.15, z1],
+      ],
+      { ...inkLine, strokeWidth: 2.2 },
+    );
+  iso.flat(
+    [
+      [-1.65, 0.97, -0.7],
+      [-1.65, 0.97, 0.7],
+      [-1.35, 0.97, 0.7],
+      [-1.15, 0.97, 0],
+      [-1.35, 0.97, -0.7],
+    ].map(([x, y, z]) => [x, y, z] as const),
+    ISO.wall,
+  );
+  iso.flat(
+    [
+      [-1.65, 0.96, 0],
+      [-1.5, 1.62, 0],
+      [-1.22, 1.62, 0],
+      [-0.9, 0.96, 0],
+    ].map(([x, y, z]) => [x, y, z] as const),
+    ISO.red,
+  );
+  return iso.svg();
+}
+
+/** Small isometric cargo ship on a patch of water: bridge aft, cargo on deck. */
+function shipIcon() {
+  const iso = new IsoDrawing();
+  const water = Array.from({ length: 48 }, (_, i): [number, number, number] => {
+    const t = (i / 48) * Math.PI * 2;
+    return [0.05 + Math.cos(t) * 2, 0, Math.sin(t) * 0.85];
+  });
+  iso.path(water, { fill: "#dbe7e6" });
+  const [x0, x1, bow, b, top] = [-1.55, 1, 1.6, 0.42, 0.5];
+  iso.box([x0, 0.05, -b], [x1 - x0, top - 0.05, b * 2], ISO.dark, {
+    front: ([fw, fh]) => (
+      <rect x={0} y={fh * 0.72} width={fw} height={fh * 0.28} fill={ISO.red} />
+    ),
+  });
+  iso.flat(
+    [
+      [x1, top, b],
+      [bow, top, 0],
+      [bow - 0.1, 0.05, 0],
+      [x1, 0.05, b],
+    ],
+    ISO.dark,
+  );
+  iso.flat(
+    [
+      [x0, top, -b],
+      [x1, top, -b],
+      [bow, top, 0],
+      [x1, top, b],
+      [x0, top, b],
+    ],
+    ISO.grey,
+  );
+  iso.box([x0 + 0.05, top, -0.36], [0.55, 0.5, 0.72], ISO.white, {
+    side: ([sw, sh]) => (
+      <rect x={sw * 0.15} y={sh * 0.3} width={sw * 0.7} height={sh * 0.2} fill="#647474" {...thin} />
+    ),
+  });
+  iso.box([x0 + 0.1, top + 0.5, -0.3], [0.42, 0.28, 0.6], ISO.white, {
+    side: ([sw, sh]) => (
+      <rect x={sw * 0.1} y={sh * 0.25} width={sw * 0.8} height={sh * 0.4} fill="#647474" {...thin} />
+    ),
+  });
+  iso.box([x0 + 0.14, top + 0.78, -0.28], [0.2, 0.3, 0.2], ISO.red);
+  iso.box([-0.6, top, -0.34], [0.5, 0.36, 0.5], ISO.red);
+  iso.box([0, top, -0.34], [0.5, 0.28, 0.5], ISO.wall);
+  iso.box([-0.55, top, 0.02], [0.42, 0.24, 0.3], ISO.white);
+  iso.box([x0 + 0.62, top, b - 0.05], [x1 - x0 - 0.62, 0.12, 0.05], ISO.white);
+  return iso.svg();
+}
+
+/** Small isometric ship, truck or plane for the vehicle choices. */
+function vehicleIcon(kind: VehicleKind) {
+  if (kind === "plane") return planeIcon();
+  if (kind === "ship") return shipIcon();
+  const iso = new IsoDrawing().shadow(-0.1, 0.1, 1.75, 0.62);
+  const [x0, len, h, w] = [-1.5, 2, 1.25, 0.9];
+  const cab: [number, number] = [0.75, 0.95];
   iso.box([x0, 0.3, -w / 2], [len, h, w], ISO.red, {
     front: ([fw, fh]) => (
       <rect x={fw * 0.12} y={fh * 0.42} width={fw * 0.76} height={fh * 0.12} fill={ISO.white} />
@@ -50,8 +157,7 @@ function vehicleIcon(kind: VehicleKind) {
       <rect x={fw * 0.2} y={0.08} width={fw * 0.62} height={0.3} fill="#647474" {...thin} />
     ),
   });
-  const wheels = truck ? [-1.1, -0.55, 0.85] : [-0.7, 0.55];
-  for (const cx of wheels) {
+  for (const cx of [-1.1, -0.55, 0.85]) {
     const pts = Array.from({ length: 20 }, (_, i): [number, number, number] => {
       const t = (i / 20) * Math.PI * 2;
       return [cx + Math.cos(t) * 0.24, 0.26 + Math.sin(t) * 0.24, w / 2 + 0.01];
@@ -128,43 +234,25 @@ function Arrow() {
     </svg>
   );
 }
-function Plus() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 const lower = (kind: VehicleKind) => VEHICLES[kind].name.toLowerCase();
-const clampQuantity = (n: number) =>
-  Math.min(MAX_QUANTITY, Math.max(1, Math.round(n) || 1));
 
 /**
- * Load simulator: pick small or large goods and a van or truck drives in and
- * lifts its side; add boxes and watch them packed inside. When they no longer
- * fit, the leftovers wait on the pad and the panel offers the truck.
+ * Load simulator: pick how to ship and a cargo ship docks (the lane floods
+ * into a quay), a truck drives in, or a plane taxis up, and opens its side;
+ * add boxes and watch them packed inside. When they no longer fit, the
+ * leftovers wait on the pad and the panel offers a chat with the team.
  */
 export default function LoadSimulator() {
   const stage = useRef<HTMLDivElement>(null);
   const { loaded, running, reduced } = useLazyScene(stage);
   const [vehicle, setVehicle] = useState<VehicleKind | null>(null);
-  const [kind, setKind] = useState<ItemKind>("medium");
-  const [quantity, setQuantity] = useState("1");
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<SimStatus | null>(null);
   const nextId = useRef(1);
 
   const plan = useMemo(
     () => (vehicle ? planLoad(items, vehicle) : null),
-    [items, vehicle],
-  );
-  // Everything in the truck would also fit the van: suggest the smaller one.
-  const vanWouldDo = useMemo(
-    () =>
-      vehicle === "truck" &&
-      items.length > 0 &&
-      planLoad(items, "van").leftovers.length === 0,
     [items, vehicle],
   );
   const kinds = countKinds(items);
@@ -176,28 +264,18 @@ export default function LoadSimulator() {
         counts.set(item.kind, (counts.get(item.kind) ?? 0) + 1);
     return counts;
   }, [items, plan]);
+  const countOf = new Map(kinds.map((k) => [k.kind, k.count]));
   const room = MAX_ITEMS - items.length;
-  const count = clampQuantity(Number(quantity));
 
-  function add(e: FormEvent) {
-    e.preventDefault();
-    if (!vehicle) return;
-    const n = Math.min(count, room);
-    if (n <= 0) return;
-    const fresh = Array.from({ length: n }, () => ({
-      id: nextId.current++,
-      kind,
-    }));
-    setItems((prev) => [...prev, ...fresh]);
+  function addOne(k: ItemKind) {
+    if (!vehicle || room <= 0) return;
+    setItems((prev) => [...prev, { id: nextId.current++, kind: k }]);
   }
   function removeOne(k: ItemKind) {
     setItems((prev) => {
       const i = prev.findLastIndex((item) => item.kind === k);
       return i < 0 ? prev : [...prev.slice(0, i), ...prev.slice(i + 1)];
     });
-  }
-  function nudge(step: number) {
-    setQuantity(String(clampQuantity(count + step)));
   }
 
   const name = vehicle ? lower(vehicle) : "";
@@ -215,17 +293,23 @@ export default function LoadSimulator() {
         ? `Memindahkan muatan dari ${lower(status.vehicle)}…`
         : `${VEHICLES[status.vehicle].name} berangkat, ${name} segera datang…`;
   else if (!status || status.phase === "away" || status.phase === "arriving")
-    message = `${VEHICLES[vehicle].name} menuju area muat…`;
-  else if (status.phase === "opening") message = `Membuka box ${name}…`;
+    message = {
+      ship: "Kapal berlayar menuju dermaga…",
+      truck: "Truk menuju area muat…",
+      plane: "Pesawat taxi menuju area muat…",
+    }[vehicle];
+  else if (status.phase === "opening")
+    message = {
+      ship: "Menurunkan sisi dek kapal…",
+      truck: "Membuka box truk…",
+      plane: "Membuka pintu kargo…",
+    }[vehicle];
   else if (status.moving > 0) message = "Menyusun barang…";
   else if (!items.length)
     message = `${VEHICLES[vehicle].name} siap dimuat. Tambahkan barang dari panel.`;
   else if (plan?.leftovers.length)
     message = `${plan.order.length} barang di dalam ${name}, ${plan.leftovers.length} tidak muat.`;
   else message = `Semua barang masuk. ${VEHICLES[vehicle].name} terisi ${plan?.percent ?? 0}%.`;
-
-  const chatUrl =
-    plan && items.length ? loadMessageUrl(items, plan) : whatsappChat();
 
   return (
     <section
@@ -256,7 +340,7 @@ export default function LoadSimulator() {
               role="img"
               aria-label={
                 vehicle
-                  ? `Ilustrasi 3D ${VEHICLES[vehicle].model.toLowerCase()} 3 Daya Terang dengan sisi box terangkat. ${plan?.order.length ?? 0} barang tersusun di dalam, terisi ${plan?.percent ?? 0} persen.`
+                  ? `Ilustrasi 3D ${VEHICLES[vehicle].model.toLowerCase()} 3 Daya Terang dengan ${{ ship: "sisi dek terbuka, bersandar di dermaga", truck: "sisi box terangkat", plane: "pintu kargo terbuka" }[vehicle]}. ${plan?.order.length ?? 0} barang tersusun di dalam, terisi ${plan?.percent ?? 0} persen.`
                   : "Ilustrasi 3D area muat 3 Daya Terang yang menunggu armada datang."
               }
             >
@@ -296,7 +380,7 @@ export default function LoadSimulator() {
           </div>
 
           <div className="loadsim-panel">
-            <form onSubmit={add}>
+            <div>
               <fieldset className="loadsim-step">
                 <legend className="loadsim-legend">
                   <span>01</span> Pilih jenis kiriman
@@ -313,88 +397,86 @@ export default function LoadSimulator() {
                       />
                       <span className="loadsim-option-icon">{vehicleIcon(v.kind)}</span>
                       <strong>{v.need}</strong>
-                      <small>
-                        {v.model} · ±{decimal(vehicleVolume(v.kind))} m³
-                      </small>
+                      <small>{v.model}</small>
+                      <small>±{decimal(vehicleVolume(v.kind))} m³</small>
                     </label>
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="loadsim-step" disabled={!vehicle}>
-                <legend className="loadsim-legend">
-                  <span>02</span> Tambah barang
-                </legend>
-                <div className="loadsim-kinds">
-                  {ITEM_LIST.map((item) => (
-                    <label key={item.kind} className="loadsim-option loadsim-kind">
-                      <input
-                        type="radio"
-                        name="loadsim-kind"
-                        value={item.kind}
-                        checked={kind === item.kind}
-                        onChange={() => setKind(item.kind)}
-                      />
-                      <span className="loadsim-option-icon">{itemIcon(item.kind)}</span>
-                      <strong>{item.name}</strong>
-                      <small>{itemSize(item.kind)}</small>
-                    </label>
-                  ))}
-                </div>
-                <div className="loadsim-add">
-                  <div className="loadsim-quantity">
-                    <button
-                      type="button"
-                      aria-label="Kurangi jumlah"
-                      onClick={() => nudge(-1)}
-                      disabled={count <= 1}
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={MAX_QUANTITY}
-                      value={quantity}
-                      aria-label="Jumlah barang"
-                      onChange={(e) => setQuantity(e.target.value)}
-                      onBlur={() => setQuantity(String(count))}
-                    />
-                    <button
-                      type="button"
-                      aria-label="Tambah jumlah"
-                      onClick={() => nudge(1)}
-                      disabled={count >= MAX_QUANTITY}
-                    >
-                      +
-                    </button>
+              {/* The actions sit beside this step's title (see CSS), after
+                  the counters in reading order. */}
+              <div className="loadsim-goods">
+                <fieldset className="loadsim-step" disabled={!vehicle}>
+                  <legend className="loadsim-legend">
+                    <span>02</span> Tambah barang
+                  </legend>
+                  <div className="loadsim-kinds">
+                    {ITEM_LIST.map((item) => {
+                      const n = countOf.get(item.kind) ?? 0;
+                      const label = item.name.toLowerCase();
+                      return (
+                        <div
+                          key={item.kind}
+                          className={`loadsim-kind${n ? " is-active" : ""}`}
+                          role="group"
+                          aria-label={item.name}
+                        >
+                          <span className="loadsim-option-icon">{itemIcon(item.kind)}</span>
+                          <span className="loadsim-kind-name">
+                            <strong>{item.name}</strong>
+                            <small>{itemSize(item.kind)}</small>
+                          </span>
+                          <div className="loadsim-stepper">
+                            <button
+                              type="button"
+                              aria-label={`Kurangi ${label}`}
+                              onClick={() => removeOne(item.kind)}
+                              disabled={!n}
+                            >
+                              −
+                            </button>
+                            <output aria-label={`Jumlah ${label}`}>{n}</output>
+                            <button
+                              type="button"
+                              aria-label={`Tambah ${label}`}
+                              onClick={() => addOne(item.kind)}
+                              disabled={room <= 0}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+                  {!vehicle && (
+                    <p className="loadsim-hint">Pilih jenis kiriman dulu, lalu tambahkan barang.</p>
+                  )}
+                  {vehicle && room <= 0 && (
+                    <p className="loadsim-hint">
+                      Simulasi menampung paling banyak {MAX_ITEMS} barang.
+                    </p>
+                  )}
+                </fieldset>
+                <div className="loadsim-actions">
                   <button
-                    type="submit"
-                    className="button primary loadsim-submit"
-                    disabled={!vehicle || room <= 0}
+                    type="button"
+                    className="loadsim-clear"
+                    onClick={() => setItems([])}
+                    disabled={!items.length}
                   >
-                    {vehicle ? `Tambah ke ${name}` : "Tambah barang"}
-                    <Plus />
+                    Kosongkan
                   </button>
                 </div>
-                {!vehicle && (
-                  <p className="loadsim-hint">Pilih jenis kiriman dulu, lalu tambahkan barang.</p>
-                )}
-                {vehicle && room < count && (
-                  <p className="loadsim-hint">
-                    Simulasi menampung paling banyak {MAX_ITEMS} barang.
-                  </p>
-                )}
-              </fieldset>
-            </form>
+              </div>
+            </div>
 
-            <div className="loadsim-step loadsim-load">
-              <h3 className="loadsim-legend">
-                <span>03</span> Muatan
-              </h3>
-              {plan ? (
+            {plan && (
+              <div className="loadsim-step loadsim-load">
+                <h3 className="loadsim-legend">
+                  <span>03</span> Muatan
+                </h3>
                 <div className="loadsim-meter">
                   <div className="loadsim-meter-top">
                     <span>Ruang terpakai</span>
@@ -415,97 +497,54 @@ export default function LoadSimulator() {
                     {plan.order.length} barang di dalam {name}
                   </small>
                 </div>
-              ) : null}
-              {kinds.length ? (
-                <ul className="loadsim-list">
-                  {kinds.map((k) => (
-                    <li key={k.kind}>
-                      <span className={`loadsim-swatch is-${k.kind}`} aria-hidden="true" />
-                      <span className="loadsim-list-name">
-                        {k.name}
-                        <small>
-                          {itemSize(k.kind)}
-                          {leftByKind.get(k.kind) ? (
-                            <em> · {leftByKind.get(k.kind)} tidak muat</em>
-                          ) : null}
-                        </small>
-                      </span>
-                      <b>× {k.count}</b>
-                      <button
-                        type="button"
-                        aria-label={`Kurangi satu ${k.name.toLowerCase()}`}
-                        onClick={() => removeOne(k.kind)}
-                      >
-                        −
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="loadsim-empty">
-                  {vehicle
-                    ? "Belum ada barang. Pilih jenis barang di atas, lalu tekan Tambah."
-                    : "Muatan Anda akan tampil di sini."}
-                </p>
-              )}
+                {kinds.length > 0 && (
+                  <ul className="loadsim-list">
+                    {kinds.map((k) => (
+                      <li key={k.kind}>
+                        <span className={`loadsim-swatch is-${k.kind}`} aria-hidden="true" />
+                        <span className="loadsim-list-name">
+                          {k.name}
+                          <small>
+                            {itemSize(k.kind)}
+                            {leftByKind.get(k.kind) ? (
+                              <em> · {leftByKind.get(k.kind)} tidak muat</em>
+                            ) : null}
+                          </small>
+                        </span>
+                        <b>× {k.count}</b>
+                        <button
+                          type="button"
+                          aria-label={`Kurangi satu ${k.name.toLowerCase()}`}
+                          onClick={() => removeOne(k.kind)}
+                        >
+                          −
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-              {plan && plan.leftovers.length > 0 && (
-                <div className="loadsim-alert" role="alert">
-                  <p>
-                    <strong>
-                      {plan.leftovers.length} barang tidak muat di {name}.
-                    </strong>{" "}
-                    {vehicle === "van"
-                      ? `Truk box punya ruang ±${decimal(vehicleVolume("truck"))} m³, hampir 4× van.`
-                      : "Kami bisa siapkan armada tambahan atau kirim bertahap."}
-                  </p>
-                  {vehicle === "van" ? (
-                    <button
-                      type="button"
-                      className="loadsim-switch"
-                      onClick={() => setVehicle("truck")}
-                    >
-                      Ganti ke truk <Arrow />
-                    </button>
-                  ) : (
-                    <a className="loadsim-switch" href={chatUrl} {...EXTERNAL}>
+                {plan.leftovers.length > 0 && (
+                  <div className="loadsim-alert" role="alert">
+                    <p>
+                      <strong>
+                        {plan.leftovers.length} barang tidak muat di {name}.
+                      </strong>{" "}
+                      {
+                        {
+                          ship: "Kami bisa siapkan ruang kapal tambahan atau kirim bertahap.",
+                          truck: "Kami bisa siapkan armada tambahan atau kirim bertahap.",
+                          plane: "Kami bisa atur penerbangan tambahan atau kirim bertahap.",
+                        }[plan.vehicle]
+                      }
+                    </p>
+                    <a className="loadsim-switch" href={loadMessageUrl(items, plan)} {...EXTERNAL}>
                       Konsultasi armada <Arrow />
                     </a>
-                  )}
-                </div>
-              )}
-              {vanWouldDo && (
-                <div className="loadsim-tip">
-                  <p>Semua barang ini muat di van, pilihan yang lebih hemat.</p>
-                  <button
-                    type="button"
-                    className="loadsim-switch"
-                    onClick={() => setVehicle("van")}
-                  >
-                    Pakai van <Arrow />
-                  </button>
-                </div>
-              )}
-
-              <div className="loadsim-actions">
-                <a className="button primary" href={chatUrl} {...EXTERNAL}>
-                  {plan && items.length ? `Pesan ${name} ini` : "Tanya tim kami"}
-                  <WhatsAppIcon />
-                </a>
-                <button
-                  type="button"
-                  className="loadsim-clear"
-                  onClick={() => setItems([])}
-                  disabled={!items.length}
-                >
-                  Kosongkan
-                </button>
+                  </div>
+                )}
               </div>
-              <p className="loadsim-note">
-                Simulasi menghitung ruang muat saja. Berat, rute, dan tarif
-                final dikonfirmasi tim kami.
-              </p>
-            </div>
+            )}
           </div>
         </div>
       </div>

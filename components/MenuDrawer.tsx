@@ -8,18 +8,20 @@ import {
 import { SOCIAL } from "@/lib/site";
 import Brand from "./Brand";
 import { SocialIcon } from "./icons";
+import { lockScroll } from "./smooth-scroll";
+import TodayHours from "./TodayHours";
 
 export const NAV_LINKS = [
+  ["Tentang kami", "#tentang-kami"],
   ["Layanan", "#services"],
   ["Simulasi", "#simulasi"],
-  ["Tentang kami", "#tentang-kami"],
   ["Testimoni", "#testimoni"],
   ["Cara kerja", "#how-it-works"],
 ] as const;
 
 /**
- * Tablet and phone menu: a panel that slides in from the right with the logo,
- * the section links and the social icons. The page behind it stops scrolling,
+ * Site menu, opened from the Menu button: a panel that slides in from the left
+ * with the logo, the section links, today's date and time and the social icons. The page behind it stops scrolling,
  * Escape or the backdrop closes it, and Tab stays inside while it is open.
  */
 export default function MenuDrawer({
@@ -36,9 +38,11 @@ export default function MenuDrawer({
     const returnTo = document.activeElement as HTMLElement | null;
     const root = document.documentElement;
     root.classList.add("menu-locked");
+    lockScroll(true);
     close.current?.focus();
     return () => {
       root.classList.remove("menu-locked");
+      lockScroll(false);
       returnTo?.focus({ preventScroll: true });
     };
   }, [open]);
@@ -67,6 +71,7 @@ export default function MenuDrawer({
         className="drawer-panel"
         id="menu-drawer"
         ref={panel}
+        data-lenis-prevent
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
@@ -111,6 +116,8 @@ export default function MenuDrawer({
           </ul>
         </nav>
         <div className="drawer-foot">
+          <span className="eyebrow">HARI INI</span>
+          <TodayHours className="drawer-hours" />
           <span className="eyebrow">IKUTI KAMI</span>
           <ul className="drawer-social">
             {SOCIAL.map(({ name, url }) => (

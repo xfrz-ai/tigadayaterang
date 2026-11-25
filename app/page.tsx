@@ -3,12 +3,15 @@ import dynamic from "next/dynamic";
 import About from "@/components/About";
 import Brand from "@/components/Brand";
 import Footer from "@/components/Footer";
-import MenuDrawer, { NAV_LINKS } from "@/components/MenuDrawer";
+import HeroTitle from "@/components/HeroTitle";
+import MenuDrawer from "@/components/MenuDrawer";
 import Contact from "@/components/Contact";
 import { WhatsAppIcon } from "@/components/icons";
 import LoadSimulator from "@/components/LoadSimulator";
 import Services from "@/components/Services";
+import { useSmoothScroll } from "@/components/smooth-scroll";
 import Testimonials from "@/components/Testimonials";
+import TodayHours from "@/components/TodayHours";
 import WhyUs from "@/components/WhyUs";
 import { EXTERNAL, whatsappChat } from "@/lib/site";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -41,7 +44,7 @@ export default function Home() {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
   const [hidden, setHidden] = useState(false);
-  // On tablets and phones the header is fixed; it tightens once the page scrolls.
+  // The header is fixed at the top; it tightens once the page scrolls.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -49,6 +52,7 @@ export default function Home() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  useSmoothScroll();
   const onReady = useCallback(() => setReady(true), []);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
@@ -73,70 +77,38 @@ export default function Home() {
     <main>
       <section className="hero" id="home">
         <header className={scrolled ? "header is-scrolled" : "header"}>
+          <div className="header-start">
+            <button
+              className="menu-toggle"
+              aria-label="Buka menu"
+              aria-expanded={menu}
+              aria-controls="menu-drawer"
+              onClick={() => setMenu(true)}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 8.5h16M4 15.5h16"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="menu-toggle-label">Menu</span>
+            </button>
+          </div>
           <Brand />
-          <nav aria-label="Navigasi utama" className="nav">
-            {NAV_LINKS.map(([label, href]) => (
-              <a key={href} href={href}>
-                {label}
-              </a>
-            ))}
-          </nav>
-          <a className="header-cta" href={chatUrl} {...EXTERNAL}>
-            <span className="header-cta-label">Hubungi kami</span>
-            <WhatsAppIcon />
-          </a>
-          <button
-            className="menu-toggle"
-            aria-label="Buka menu"
-            aria-expanded={menu}
-            aria-controls="menu-drawer"
-            onClick={() => setMenu(true)}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M3 6.5h18M3 12h18M9 17.5h12"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+          <div className="header-end">
+            <TodayHours className="header-hours" />
+            <a className="header-cta" href={chatUrl} {...EXTERNAL}>
+              <span className="header-cta-label">Hubungi kami</span>
+              <span className="header-cta-icon">
+                <WhatsAppIcon />
+              </span>
+            </a>
+          </div>
         </header>
         <div className="hero-copy">
-          <div className="eyebrow">
-            <span className="red-dot" /> JASA LOGISTIK DARAT · LAUT · UDARA
-          </div>
-          <h1>
-            Kirim aman.
-            <br />
-            <span>Tarif bersahabat.</span>
-          </h1>
-          <p>
-            Dari paket kecil sampai muatan palet, kami antar barang Anda dengan
-            teliti dan tepat waktu,
-            <br className="desktop-break" /> ke seluruh Jabodetabek hingga
-            mancanegara. Harga jelas sejak awal.
-          </p>
-          <div className="hero-actions">
-            <a className="button primary" href={chatUrl} {...EXTERNAL}>
-              Cek tarif sekarang <Arrow />
-            </a>
-            <a className="watch-button" href="#services">
-              <span className="play-icon">
-                <svg viewBox="0 0 12 12" aria-hidden="true">
-                  <path
-                    d="M6 2v8M2.8 6.8 6 10l3.2-3.2"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              Lihat layanan kami
-            </a>
-          </div>
+          <HeroTitle />
         </div>
         <div
           className={`scene ${ready ? "is-ready" : ""}`}
@@ -156,9 +128,9 @@ export default function Home() {
           )}
         </div>
       </section>
+      <About />
       <Services />
       <LoadSimulator />
-      <About />
       <WhyUs />
       <Testimonials />
       <section className="process section" id="how-it-works">

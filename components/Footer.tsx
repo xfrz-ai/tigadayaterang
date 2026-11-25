@@ -14,8 +14,8 @@ import { services } from "./service-data";
 
 const PAGE_LINKS = [
   ["Beranda", "#home"],
-  ["Simulasi muat", "#simulasi"],
   ["Tentang kami", "#tentang-kami"],
+  ["Simulasi muat", "#simulasi"],
   ["Kenapa kami", "#kenapa-kami"],
   ["Testimoni", "#testimoni"],
   ["Cara kerja", "#how-it-works"],

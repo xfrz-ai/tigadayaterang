@@ -20,10 +20,10 @@ try {
   await page.goto(base, { waitUntil: "networkidle" });
   assert.equal(
     await page.evaluate(
-      () => document.querySelector("#tentang-kami").nextElementSibling.id,
+      () => document.querySelector("#simulasi").nextElementSibling.id,
     ),
     "kenapa-kami",
-    "Reasons follow the about section",
+    "Reasons follow the load simulator",
   );
   assert.deepEqual(await page.locator(".why-item h3").allInnerTexts(), [
     "Tepat Waktu, Sesuai Janji",

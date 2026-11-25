@@ -2,12 +2,12 @@ import { whatsappText } from "@/lib/site";
 
 /**
  * Data and packing for the load simulator (components/LoadSimulator.tsx).
- * Everything is measured in 10 cm cells, so a van and a truck can be filled
- * box by box and we can tell exactly when something no longer fits.
+ * Everything is measured in 10 cm cells, so a ship, a truck and a plane can
+ * be filled box by box and we can tell exactly when something no longer fits.
  */
 export const CELL = 0.1; // metres per cell
 
-export type VehicleKind = "van" | "truck";
+export type VehicleKind = "ship" | "truck" | "plane";
 export type ItemKind = "parcel" | "medium" | "large" | "pallet";
 export type Item = { id: number; kind: ItemKind };
 /** [length along the vehicle, height, width across] in cells. */
@@ -22,12 +22,13 @@ export type VehicleSpec = {
   cells: Cells;
 };
 export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
-  van: {
-    kind: "van",
-    need: "Barang kecil",
-    name: "Van",
-    model: "Blind van",
-    cells: [22, 12, 14],
+  // Open cargo deck of a small inter-island freighter.
+  ship: {
+    kind: "ship",
+    need: "Antar pulau",
+    name: "Kapal",
+    model: "Kapal kargo",
+    cells: [48, 16, 22],
   },
   truck: {
     kind: "truck",
@@ -36,21 +37,28 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     model: "Truk box",
     cells: [38, 20, 18],
   },
+  // Main deck of a small twin-turboprop freighter: still takes a pallet.
+  plane: {
+    kind: "plane",
+    need: "Kirim cepat",
+    name: "Pesawat",
+    model: "Pesawat kargo",
+    cells: [36, 16, 20],
+  },
 };
-export const VEHICLE_LIST = [VEHICLES.van, VEHICLES.truck];
+export const VEHICLE_LIST = [VEHICLES.ship, VEHICLES.truck, VEHICLES.plane];
 
 export type ItemSpec = { kind: ItemKind; name: string; cells: Cells };
 export const ITEMS: Record<ItemKind, ItemSpec> = {
   parcel: { kind: "parcel", name: "Paket kecil", cells: [3, 2, 2] },
   medium: { kind: "medium", name: "Kardus sedang", cells: [5, 4, 4] },
   large: { kind: "large", name: "Kardus besar", cells: [8, 6, 6] },
-  // A loaded euro pallet: too tall for the van's 1.2 m.
+  // A loaded euro pallet, 1.3 m tall.
   pallet: { kind: "pallet", name: "Palet", cells: [12, 13, 8] },
 };
 export const ITEM_LIST = Object.values(ITEMS);
 /** Most boxes the simulation will hold at once. */
 export const MAX_ITEMS = 150;
-export const MAX_QUANTITY = 20;
 
 const volumeOf = (c: Cells) => c[0] * c[1] * c[2] * CELL ** 3;
 export const itemVolume = (kind: ItemKind) => volumeOf(ITEMS[kind].cells);

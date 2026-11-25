@@ -21,7 +21,7 @@ const add = (a: V3, b: V3, k = 1): V3 => [
 ];
 const fmt = (n: number) => +n.toFixed(3);
 
-// Camera offset (11, 10, 14), as in ServiceIllustration and AboutScene.
+// Camera offset (11, 10, 14), as in the WebGL scenes.
 const VIEW = unit([11, 10, 14]);
 const RIGHT = unit([14, 0, -11]);
 const UP = unit([-110, 317, -140]);

@@ -1,257 +1,178 @@
 import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+
+// The services journey: numeric and DOM checks only, no screenshots.
 const browser = await chromium.launch({
   channel: "chrome",
   headless: true,
   args: ["--enable-webgl", "--ignore-gpu-blocklist"],
 });
-const page = await browser.newPage({
-  viewport: { width: 1440, height: 1000 },
-  deviceScaleFactor: 1.5,
-});
-const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
-page.on("response", (r) => {
-  if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`);
-});
 const base = process.env.VERIFY_URL || "http://localhost:3000";
+const errors = [];
 await mkdir("artifacts", { recursive: true });
-const state = () =>
-  page.evaluate(() => JSON.parse(JSON.stringify(window.__relayServices || {})));
-const scrollToServices = async () => {
-  await page.locator("#services").scrollIntoViewIfNeeded();
-  await page.waitForFunction(
-    () => Object.keys(window.__relayServices || {}).length === 3,
-  );
-  await page.waitForTimeout(450);
-};
-try {
-  const source = await readFile("app/page.tsx", "utf8");
-  for (const removed of [
-    "BETTER CONNECTED",
-    "INSIDE THE 3 DAYA TERANG HUB",
-    "A LITTLE FURTHER GOES A LONG WAY",
-    "note-cross",
-  ])
-    assert(!source.includes(removed), `Hero no longer shows "${removed}"`);
-  // Everything above the exported wrapper: imports, timing and the World
-  // (camera and animation). The wrapper only holds the no-WebGL fallback copy.
-  const heroWorld = (src) =>
-    src.slice(0, src.indexOf("export default function LogisticsScene"));
-  assert.equal(
-    heroWorld(await readFile("components/LogisticsScene.tsx", "utf8")),
-    heroWorld(
-      execFileSync(
-        "git",
-        [
-          "show",
-          "45b46d2f2ac819f9ec93847b3060ec4c1eaa2c73:components/LogisticsScene.tsx",
-        ],
-        { encoding: "utf8" },
-      ),
-    ),
-    "Hero camera and animation are unchanged",
-  );
+
+async function open(viewport, options = {}) {
+  const page = await browser.newPage({ viewport, ...options });
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  page.on("response", (r) => {
+    if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`);
+  });
   await page.goto(base, { waitUntil: "networkidle" });
-  await scrollToServices();
-  assert.equal(await page.locator(".cargo-service-card").count(), 3);
-  assert.equal(
-    await page.locator('[data-service="drone"]').count(),
-    0,
-    "Drone service is hidden",
-  );
-  assert.equal(
-    await page.locator("option", { hasText: "Drone" }).count(),
-    0,
-    "Drone is not offered in the enquiry form",
+  return page;
+}
+/** Scrolls to progress `p` through the pinned track and lets the ride settle. */
+async function scrollTrack(page, p, wait = 2200) {
+  await page.evaluate((p) => {
+    const t = document.querySelector(".journey-track");
+    const top = t.getBoundingClientRect().top + scrollY;
+    window.scrollTo({ top: top + p * (t.offsetHeight - innerHeight), behavior: "instant" });
+  }, p);
+  await page.waitForFunction(() => window.__relayJourney, null, { timeout: 15000 });
+  await page.waitForTimeout(wait);
+}
+/** The journey's state and what each stop shows. */
+const look = (page) =>
+  page.evaluate(() => {
+    const j = window.__relayJourney;
+    const stops = [...document.querySelectorAll(".journey-stop")].map((el) => ({
+      kind: el.dataset.service,
+      opacity: +getComputedStyle(el).opacity,
+    }));
+    const pin = document.querySelector(".journey-pin").getBoundingClientRect();
+    const current = document.querySelector(".journey-steps [aria-current]");
+    return {
+      x: j.x,
+      s: j.s,
+      zoom: j.zoom,
+      clock: j.clock,
+      stops,
+      pinned: Math.abs(pin.top) < 1 && Math.abs(pin.height - innerHeight) < 1,
+      current: current ? current.textContent.trim() : null,
+    };
+  });
+// Mid-stop scroll progress (journey-timeline stopProgress).
+const STOP_AT = [0.17, 0.47, 0.77];
+const NAMES = ["Transportasi Darat", "Kargo Laut", "Kargo Udara"];
+
+try {
+  const page = await open({ width: 1440, height: 900 });
+  // Straight after About, with the heading and three stops, drone hidden.
+  assert.deepEqual(
+    await page.evaluate(() =>
+      [...document.querySelectorAll("main > section")].slice(1, 3).map((s) => s.id),
+    ),
+    ["tentang-kami", "services"],
+    "Services follow About",
   );
   assert.match(
-    await page.locator("#cargo-services-heading").innerText(),
+    await page.locator("#journey-heading").innerText(),
     /Solusi Kargo yang Aman\s+dan Bisa Diandalkan\./,
   );
-  assert.equal(
-    await page.evaluate(
-      () => document.querySelector(".hero").nextElementSibling.id,
-    ),
-    "services",
+  assert.deepEqual(
+    await page.locator(".journey-stop h3").allTextContents(),
+    NAMES,
+    "Three stops, in order",
   );
-  const before = await state();
-  await page.waitForTimeout(900);
-  const after = await state();
-  for (const kind of ["road", "ocean", "air"]) {
-    assert(after[kind].running, `${kind} runs automatically`);
-    assert(after[kind].time > before[kind].time, `${kind} clock advances`);
-    assert.notEqual(
-      after[kind].motion,
-      before[kind].motion,
-      `${kind} moving detail animates`,
+  assert.equal(await page.locator('[data-service="drone"]').count(), 0, "Drone hidden");
+  assert.equal(await page.locator(".journey-card a").count(), 0, "No buttons in the cards");
+
+  // Start: zoomed out on the road, no stop shown.
+  await scrollTrack(page, 0);
+  const start = await look(page);
+  assert(start.pinned, "Journey pinned to the screen");
+  assert(start.stops.every((s) => s.opacity === 0), "No stop shown at the start");
+  const zoom = start.zoom;
+
+  // Each stop: the same zoom, and only that stop's text shows.
+  const atStops = [];
+  for (const [i, p] of STOP_AT.entries()) {
+    await scrollTrack(page, p);
+    const at = await look(page);
+    atStops.push(at);
+    assert(at.pinned, `Stop ${i + 1}: pinned`);
+    assert(Math.abs(at.x - (i + 1)) < 0.01, `Stop ${i + 1}: journey there`);
+    assert.equal(at.zoom, zoom, `Stop ${i + 1}: no zooming in`);
+    at.stops.forEach((s, j) =>
+      assert.equal(s.opacity, i === j ? 1 : 0, `Stop ${i + 1}: only its text shows`),
     );
-    assert.deepEqual(
-      after[kind].camera,
-      before[kind].camera,
-      `${kind} camera stays fixed`,
-    );
-    assert.equal(after[kind].travel, 0, `${kind} rests in the centre`);
-    assert.deepEqual(
-      after[kind].rootRotation,
-      [0, 0, 0],
-      `${kind} scene does not rotate`,
-    );
+    assert.match(at.current, new RegExp(["Darat", "Laut", "Udara"][i]), "Step marked");
   }
-  // Hover drive-through: out ahead (+), back in from behind (-), rest at 0.
-  const sampleTrip = (kind, ms) =>
-    page.evaluate(
-      ([kind, ms]) =>
-        new Promise((done) => {
-          const samples = [],
-            start = performance.now();
-          const tick = () => {
-            samples.push(window.__relayServices[kind].travel);
-            if (performance.now() - start < ms) requestAnimationFrame(tick);
-            else done(samples);
-          };
-          tick();
-        }),
-      [kind, ms],
-    );
-  const tripsBefore = (await state()).air.trips;
-  await page.locator('[data-service="air"]').hover();
-  const samples = await sampleTrip("air", 2000);
-  const firstOut = samples.findIndex((v) => v > 0.5),
-    firstIn = samples.findIndex((v) => v < -0.5);
-  assert(firstOut >= 0, "Vehicle drives forward out of the card");
-  assert(firstIn > firstOut, "Vehicle re-enters from behind after leaving");
-  assert.equal(samples.at(-1), 0, "Vehicle settles back in the centre");
-  const hover = await state();
-  assert.equal(hover.air.trips, tripsBefore + 1, "One trip per hover");
-  assert(hover.air.speed > 1.4, "Hover accelerates smoothly");
   assert(
-    hover.road.travel === 0 && hover.ocean.travel === 0,
-    "Only the hovered card's vehicle moves",
+    atStops[0].s < atStops[1].s && atStops[1].s < atStops[2].s,
+    "The vehicle moves on along the route",
   );
-  await page.waitForTimeout(1200);
-  const stillHovered = await state();
-  assert.equal(stillHovered.air.trips, tripsBefore + 1, "Trip does not repeat");
-  assert.equal(stillHovered.air.travel, 0, "Vehicle stays in the centre");
-  const arrow = page.getByRole("button", {
-    name: "Tanya layanan Kargo Udara",
-  });
-  assert.equal(
-    await arrow.evaluate((el) => getComputedStyle(el).backgroundColor),
-    "rgb(36, 40, 39)",
-  );
-  await arrow.click();
-  assert(await page.locator(".quote-dialog").isVisible());
-  assert.equal(
-    await page.getByLabel("Layanan yang dibutuhkan").inputValue(),
-    "Kargo Udara",
-  );
-  await page.keyboard.press("Escape");
-  for (const [name, value] of [
-    ["Transportasi Darat", "Transportasi Darat"],
-    ["Kargo Laut", "Kargo Laut"],
-  ]) {
-    await page.getByRole("button", { name: `Tanya layanan ${name}` }).click();
-    assert.equal(
-      await page.getByLabel("Layanan yang dibutuhkan").inputValue(),
-      value,
-    );
-    await page.keyboard.press("Escape");
-  }
-  // The last enquiry leaves focus on its arrow, which keeps that card engaged.
-  await page.evaluate(() => document.activeElement?.blur());
-  await page.mouse.move(0, 0);
-  await page.waitForTimeout(1800);
-  assert(
-    Object.values(await state()).every((s) => s.travel === 0),
-    "Vehicles are back in the centre after hover",
-  );
-  for (const [width, columns] of [
-    [1440, 3],
-    [820, 2],
-    [390, 1],
-  ]) {
-    await page.setViewportSize({ width, height: 1000 });
-    await page.locator("#services").scrollIntoViewIfNeeded();
-    await page.waitForTimeout(400);
-    const boxes = await page
-      .locator(".cargo-service-card")
-      .evaluateAll((els) =>
-        els.map((el) => el.getBoundingClientRect().toJSON()),
-      );
-    const firstRow = boxes.filter((b) => Math.abs(b.top - boxes[0].top) < 2);
-    assert.equal(firstRow.length, columns, `${width}px cards per row`);
-    if (columns === 2) {
-      const grid = await page
-        .locator(".cargo-service-grid")
-        .evaluate((el) => el.getBoundingClientRect().toJSON());
-      const last = boxes.at(-1);
-      assert(
-        Math.abs(last.left + last.width / 2 - (grid.left + grid.width / 2)) < 2,
-        "Odd last card is centred",
-      );
-    }
-    assert(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-      "No horizontal overflow",
-    );
-  }
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  // Between stops: the same zoom, nothing explained.
+  await scrollTrack(page, 0.32);
+  const between = await look(page);
+  assert.equal(between.zoom, zoom, "No zooming out between stops");
+  assert(between.stops.every((s) => s.opacity === 0), "No stop shown on the way");
+  assert(between.s > atStops[0].s && between.s < atStops[1].s, "On the way to stop 2");
+
+  // The step buttons glide to a stop.
+  await scrollTrack(page, STOP_AT[0]);
+  await page.getByRole("button", { name: "Udara", exact: true }).click();
+  await page.waitForTimeout(3500);
+  const jumped = await look(page);
+  assert(Math.abs(jumped.x - 3) < 0.05, "Step button goes to its stop");
+
+  // Off screen the scene stops animating.
   await page.locator("#hubungi-kami").scrollIntoViewIfNeeded();
-  await page.waitForTimeout(450);
-  const offscreen = await state();
-  assert(
-    Object.values(offscreen).every((s) => !s.running),
-    "All offscreen cards pause",
-  );
-  await page.waitForTimeout(500);
-  const still = await state();
-  for (const kind of Object.keys(still))
-    assert.equal(
-      still[kind].time,
-      offscreen[kind].time,
-      "Offscreen clocks stay frozen",
-    );
-  await scrollToServices();
-  assert(
-    Object.values(await state()).every((s) => s.running),
-    "Visible cards resume",
-  );
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.waitForTimeout(250);
-  assert(
-    Object.values(await state()).every((s) => !s.running),
-    "Reduced motion honored",
-  );
+  await page.waitForTimeout(600);
+  const away = (await look(page)).clock;
+  await page.waitForTimeout(600);
+  assert.equal((await look(page)).clock, away, "Paused off screen");
+  await page.close();
+
+  // Phones: the name above the vehicle, the card below, nothing overflowing.
+  const phone = await open({ width: 390, height: 844 });
+  await scrollTrack(phone, STOP_AT[0]);
+  const layout = await phone.evaluate(() => {
+    const stop = document.querySelector('.journey-stop[data-service="road"]');
+    const title = stop.querySelector("h3").getBoundingClientRect();
+    const card = stop.querySelector(".journey-card").getBoundingClientRect();
+    const steps = document.querySelector(".journey-steps").getBoundingClientRect();
+    const header = document.querySelector(".header").getBoundingClientRect();
+    return {
+      order: header.bottom <= title.top && title.bottom < card.top && card.bottom < steps.top,
+      inside: card.left >= 0 && card.right <= innerWidth && steps.right <= innerWidth,
+      overflow: document.documentElement.scrollWidth > innerWidth,
+    };
+  });
+  assert(layout.order, "390px: header, name, card, steps from top to bottom");
+  assert(layout.inside && !layout.overflow, "390px: nothing overflows");
+  await phone.close();
+
+  // Reduced motion: no travel, one stop after another; nothing animates.
+  const still = await open({ width: 1440, height: 900 }, { reducedMotion: "reduce" });
+  await scrollTrack(still, 0.32, 800);
+  const a = await look(still);
+  assert.equal(a.x, 1, "Reduced motion: still at the first stop");
+  assert.equal(a.stops[0].opacity, 1, "Reduced motion: its text shown");
+  await scrollTrack(still, 0.5, 800);
+  assert.equal((await look(still)).x, 2, "Reduced motion: then the next stop");
+  assert.equal((await look(still)).clock, 0, "Reduced motion: nothing animates");
+  await still.close();
+
   assert.deepEqual(errors, [], "No browser errors or missing assets");
   const report = {
     passed: true,
     checks: [
-      "hero copy trimmed, 3D scene unchanged",
-      "directly below hero",
-      "drone hidden from cards and form",
-      "three independent animations",
-      "fixed orthographic cameras",
-      "hover drive-through: out ahead, in from behind, once",
-      "hover acceleration and arrow",
-      "all service CTA selections",
-      "3 / 2+1 centred / 1 responsive grid",
-      "offscreen pause and resume",
-      "reduced motion",
-      "no browser or network errors",
+      "follows About; heading, three stops in order, drone hidden",
+      "cards hold the explanation only, no button",
+      "pinned; starts with no stop shown",
+      "each stop: only its text shows, step marked",
+      "one zoom throughout; between stops nothing shown, vehicle moves on",
+      "step buttons go to a stop",
+      "paused off screen",
+      "phones: name above, card below, no overflow",
+      "reduced motion: stop to stop, no animation",
     ],
-    drawCalls: Object.fromEntries(
-      Object.entries(after).map(([key, v]) => [key, v.drawCalls]),
-    ),
   };
-  await writeFile(
-    "artifacts/services-verification.json",
-    JSON.stringify(report, null, 2),
-  );
+  await writeFile("artifacts/services-verification.json", JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
 } finally {
   await browser.close();

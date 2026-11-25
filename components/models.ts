@@ -123,6 +123,49 @@ export class Model {
     return this.group;
   }
 }
+/** Ink silhouette for smooth shells: back faces pushed out along their normals. */
+const shellOutline = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: { thickness: { value: 0.015 } },
+  vertexShader:
+    "uniform float thickness; void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position+normal*thickness,1.0);}",
+  fragmentShader: "void main(){gl_FragColor=vec4(0.14,0.16,0.15,1.0);}",
+});
+/**
+ * A curved part outlined by its silhouette; `edges` also inks its open
+ * borders and sharp creases.
+ */
+export function smooth(
+  m: Model,
+  geo: THREE.BufferGeometry,
+  color: string,
+  pos: number[],
+  rot: number[] = [0, 0, 0],
+  edges = false,
+) {
+  m.add(geo, color, pos, rot, edges);
+  m.group.add(new THREE.Mesh(geo.clone(), shellOutline));
+}
+/** Flat slab from a top-view outline of [x, z] points, `thickness` up from `y`. */
+export function plan(
+  m: Model,
+  points: number[][],
+  thickness: number,
+  y: number,
+  color: string,
+) {
+  const shape = new THREE.Shape();
+  points.forEach(([x, z], i) =>
+    i ? shape.lineTo(x, -z) : shape.moveTo(x, -z),
+  );
+  shape.closePath();
+  m.add(
+    new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false }),
+    color,
+    [0, y, 0],
+    [-Math.PI / 2, 0, 0],
+  );
+}
 export function label(
   parent: THREE.Group,
   text: string,
